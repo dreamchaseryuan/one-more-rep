@@ -1,0 +1,29 @@
+{
+  "name": "fitness-app",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "typecheck": "tsc --noEmit",
+    "preview": "vite preview",
+    "data:fetch-raw": "node scripts/fetch-raw.mjs data",
+    "data:build": "node scripts/build-data.mjs data/exercises.json data/name_zh.json data/terms.zh.json public/data/exercises.json data/name-overrides.json",
+    "data:profile": "node scripts/profile.mjs data/exercises.json data/name_zh.json",
+    "media:fetch": "node scripts/fetch-media.mjs public/data/exercises.json public/media",
+    "media:fetch-videos": "node scripts/fetch-media.mjs public/data/exercises.json public/media --videos --concurrency=8"
+  },
+  "dependencies": {
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.1.2",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.4",
+    "vite-plugin-pwa": "^2.0.0"
+  }
+}

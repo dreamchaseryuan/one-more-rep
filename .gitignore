@@ -1,0 +1,14 @@
+node_modules/
+dist/
+*.local
+
+# 媒体可从上游重新拉取（npm run media:fetch），不进版本库
+public/media/images/
+public/media/videos/
+public/media/index.json
+
+# 原始数据集 17.4 MB，保留在本地即可
+data/exercises.json
+
+# 验证用截图
+screenshot-*.png
