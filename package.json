@@ -12,7 +12,8 @@
     "data:build": "node scripts/build-data.mjs data/exercises.json data/name_zh.json data/terms.zh.json public/data/exercises.json data/name-overrides.json",
     "data:profile": "node scripts/profile.mjs data/exercises.json data/name_zh.json",
     "media:fetch": "node scripts/fetch-media.mjs public/data/exercises.json public/media",
-    "media:fetch-videos": "node scripts/fetch-media.mjs public/data/exercises.json public/media --videos --concurrency=8"
+    "media:fetch-videos": "node scripts/fetch-media.mjs public/data/exercises.json public/media --videos --concurrency=8",
+    "icons": "node scripts/make-icons.mjs public/icons"
   },
   "dependencies": {
     "react": "^19.3.0",

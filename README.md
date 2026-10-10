@@ -40,7 +40,8 @@ HTTPS_PROXY=http://127.0.0.1:7897 npm run media:fetch
 | `npm run data:build` | 重建精简数据集（改清洗规则/术语表后跑） |
 | `npm run data:profile` | 数据集体检：规模、维度分布、中文覆盖率 |
 | `npm run media:fetch` | 下载缩略图（8.5 MB） |
-| `npm run media:fetch-videos` | 下载动画 GIF（122 MB，可选） |
+| `npm run media:fetch-videos` | 下载动画 GIF（122 MB） |
+| `npm run icons` | 重新生成 PWA 图标（哑铃图形，手写 PNG 编码） |
 
 ## 目录
 
@@ -120,6 +121,42 @@ public/
 
 仅供个人使用。若要商业化，需先查阅 Gym visual 的使用条款，或换用
 [free-exercise-db](https://github.com/yuhonas/free-exercise-db)（Unlicense 公共领域）。
+
+## 部署（手机上用）
+
+本地跑的问题是：**手机得连同一个 WiFi** 才能打开。而训练记录是在健身房做的，
+那里用的是流量、不在家网——所以在健身房根本用不了。要解决只能发布到 HTTPS 上。
+
+### GitHub Pages
+
+**前置：仓库必须是 public。** 免费账号开不了 private 仓库的 Pages，需要 GitHub Pro。
+
+```bash
+git remote add origin https://github.com/<用户>/fitness-app.git
+git push -u origin main
+```
+
+推送后：仓库 **Settings → Pages → Source** 选 **GitHub Actions**，等 workflow 跑完。
+
+站点地址：`https://<用户>.github.io/fitness-app/`
+手机上用 Chrome/Safari 打开，选「添加到主屏幕」，就是一个独立 App。
+
+**发布前先确认一件事**：`*.github.io` 在部分网络环境下访问不稳定。
+手机浏览器打开 `https://yuhonas.github.io/free-exercise-db/` 试一下，
+能秒开就说明可用；打不开或很慢，就换下面的方案。
+
+### 备选：Cloudflare Pages / Vercel
+
+两者都可以连 **private** 仓库，免费，且国内可达性通常好于 github.io。
+配置：构建命令 `npm run build`，输出目录 `dist`，其余同 GitHub Pages。
+需要先在浏览器里授权它们的 GitHub App——这一步得你自己点。
+
+### 部署相关的两个坑
+
+- **`vite.config.ts` 里的 `BASE` 必须和仓库名一致**。项目站点在 `/<仓库名>/` 下，
+  写死 `/data/...` 会全部 404。dev 和 build 用同一个 base，避免路径 bug 只在发布后暴露。
+- **媒体不进仓库**（140 MB），由 CI 在构建时现拉（见 workflow 里的 `media:fetch`）。
+  否则每次 CI 都要 checkout 140 MB。
 
 ## 已知取舍
 
