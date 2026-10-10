@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { getProgram, PROGRAMS, type Program, type ProgramDay } from './programs';
+import type { WarmupItem } from '../types';
 
 const KEY = 'fitness:programs';
 const LEGACY_KEY = 'fitness:program';
@@ -35,6 +36,19 @@ function fromTemplate(templateId: string, taken: Set<string>): Program | null {
   };
 }
 
+/**
+ * 补齐旧数据缺的字段。
+ *
+ * 热身的字段是后加的，之前存下来的计划里没有 —— 不补的话 `day.warmup.map` 会直接崩，
+ * 而且是使用者打开应用那一刻才崩。凡是往 ProgramDay 上加必填字段，都要在这里补一次。
+ */
+function normalize(p: Program): Program {
+  return {
+    ...p,
+    days: (p.days ?? []).map((d) => ({ ...d, warmup: Array.isArray(d.warmup) ? d.warmup : [] })),
+  };
+}
+
 function load(): State {
   try {
     const raw = localStorage.getItem(KEY);
@@ -42,7 +56,9 @@ function load(): State {
       const parsed = JSON.parse(raw) as Partial<State>;
       if (Array.isArray(parsed.programs)) {
         return {
-          programs: parsed.programs.filter((p) => p && typeof p.id === 'string' && Array.isArray(p.days)),
+          programs: parsed.programs
+            .filter((p) => p && typeof p.id === 'string' && Array.isArray(p.days))
+            .map(normalize),
           activeProgramId: typeof parsed.activeProgramId === 'string' ? parsed.activeProgramId : null,
         };
       }
@@ -87,7 +103,7 @@ export function usePrograms() {
       const blank: Program = {
         id,
         name: '我的计划',
-        days: [{ name: '第一天', focus: '', exercises: [] }],
+        days: [{ name: '第一天', focus: '', warmup: [], exercises: [] }],
       };
       return { programs: [...s.programs, blank], activeProgramId: id };
     });
@@ -142,7 +158,11 @@ export function usePrograms() {
   const setProgramDesc = useCallback((desc: string) => editActive((p) => ({ ...p, desc })), [editActive]);
 
   const addDay = useCallback(
-    () => mapDays((days) => [...days, { name: `训练日 ${days.length + 1}`, focus: '', exercises: [] }]),
+    () =>
+      mapDays((days) => [
+        ...days,
+        { name: `训练日 ${days.length + 1}`, focus: '', warmup: [], exercises: [] },
+      ]),
     [mapDays],
   );
   const removeDay = useCallback(
@@ -166,6 +186,55 @@ export function usePrograms() {
         return next;
       }),
     [mapDays],
+  );
+
+  // ── 热身 ──────────────────────────────────────────────────
+  // 一旦编辑，这一天就从「引用热身方案」变成存显式数组，之后不再跟方案走
+  const addWarmup = useCallback(
+    (dayIndex: number) =>
+      mapDay(dayIndex, (d) => ({ ...d, warmup: [...d.warmup, { name: '', note: '' }] })),
+    [mapDay],
+  );
+
+  /**
+   * 从动作库挑一个热身动作追加进去。
+   * 必须是一个原子操作 —— 分两步调用（先加空条目、再回填）的话，
+   * 第二次改动在同一次 React 批处理里看不到第一条刚建出来的条目。
+   */
+  const addWarmupFromLibrary = useCallback(
+    (dayIndex: number, exerciseId: string, name: string) =>
+      mapDay(dayIndex, (d) => ({
+        ...d,
+        warmup: [...d.warmup, { exerciseId, name, note: '' }],
+      })),
+    [mapDay],
+  );
+
+  const removeWarmup = useCallback(
+    (dayIndex: number, i: number) =>
+      mapDay(dayIndex, (d) => ({ ...d, warmup: d.warmup.filter((_, x) => x !== i) })),
+    [mapDay],
+  );
+
+  const moveWarmup = useCallback(
+    (dayIndex: number, i: number, dir: -1 | 1) =>
+      mapDay(dayIndex, (d) => {
+        const j = i + dir;
+        if (j < 0 || j >= d.warmup.length) return d;
+        const next = [...d.warmup];
+        [next[i], next[j]] = [next[j], next[i]];
+        return { ...d, warmup: next };
+      }),
+    [mapDay],
+  );
+
+  const setWarmup = useCallback(
+    (dayIndex: number, i: number, patch: Partial<WarmupItem>) =>
+      mapDay(dayIndex, (d) => ({
+        ...d,
+        warmup: d.warmup.map((w, x) => (x === i ? { ...w, ...patch } : w)),
+      })),
+    [mapDay],
   );
 
   const addExercise = useCallback(
@@ -257,6 +326,11 @@ export function usePrograms() {
     setDayName,
     setDayFocus,
     moveDay,
+    addWarmup,
+    addWarmupFromLibrary,
+    removeWarmup,
+    moveWarmup,
+    setWarmup,
     addExercise,
     removeExercise,
     moveExercise,

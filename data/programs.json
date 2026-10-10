@@ -1,5 +1,5 @@
 {
-  "_comment": "内置训练计划。exerciseId 对应 public/data/exercises.json 的 id，改模板后跑 npm run check:programs 校验。repRange 是 [下限, 上限]，次数做到上限就是该加重量了。",
+  "_comment": "内置训练模板。exerciseId 对应 public/data/exercises.json，warmup 引用 data/warmups.json 的方案名。改完跑 npm run check:programs 校验。repRange 是 [下限, 上限]，次数做到上限就该加重量。模板是只读起点，使用者选用后复制成归自己的一份（见 docs/adr/0002）。",
   "programs": [
     {
       "id": "ppl",
@@ -10,6 +10,7 @@
         {
           "name": "推日",
           "focus": "胸、肩、三头",
+          "warmup": "push",
           "exercises": [
             { "exerciseId": "0025", "sets": 4, "repRange": [6, 8] },
             { "exerciseId": "0314", "sets": 3, "repRange": [8, 12] },
@@ -21,6 +22,7 @@
         {
           "name": "拉日",
           "focus": "背、二头、后束",
+          "warmup": "pull",
           "exercises": [
             { "exerciseId": "0652", "sets": 4, "repRange": [6, 10] },
             { "exerciseId": "0027", "sets": 4, "repRange": [6, 8] },
@@ -32,6 +34,7 @@
         {
           "name": "腿日",
           "focus": "股四、腘绳、臀、小腿",
+          "warmup": "legs",
           "exercises": [
             { "exerciseId": "0043", "sets": 4, "repRange": [6, 8] },
             { "exerciseId": "0085", "sets": 3, "repRange": [8, 10] },
@@ -51,6 +54,7 @@
         {
           "name": "上肢 A",
           "focus": "水平推拉为主",
+          "warmup": "upper",
           "exercises": [
             { "exerciseId": "0025", "sets": 4, "repRange": [6, 8] },
             { "exerciseId": "0027", "sets": 4, "repRange": [6, 8] },
@@ -63,6 +67,7 @@
         {
           "name": "下肢 A",
           "focus": "深蹲主导",
+          "warmup": "legs",
           "exercises": [
             { "exerciseId": "0043", "sets": 4, "repRange": [6, 8] },
             { "exerciseId": "0085", "sets": 3, "repRange": [8, 10] },
@@ -75,6 +80,7 @@
         {
           "name": "上肢 B",
           "focus": "上斜推与垂直拉",
+          "warmup": "upper",
           "exercises": [
             { "exerciseId": "0047", "sets": 4, "repRange": [8, 12] },
             { "exerciseId": "0150", "sets": 4, "repRange": [8, 12] },
@@ -87,12 +93,180 @@
         {
           "name": "下肢 B",
           "focus": "硬拉主导",
+          "warmup": "legs",
           "exercises": [
             { "exerciseId": "0032", "sets": 4, "repRange": [5, 6] },
             { "exerciseId": "0042", "sets": 3, "repRange": [8, 12] },
             { "exerciseId": "0585", "sets": 3, "repRange": [10, 15] },
             { "exerciseId": "1409", "sets": 3, "repRange": [10, 12] },
             { "exerciseId": "0586", "sets": 3, "repRange": [10, 12] },
+            { "exerciseId": "0594", "sets": 4, "repRange": [12, 20] }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "three-way",
+      "name": "三分化 · 胸背腿",
+      "desc": "按身体部位分：胸、背、腿各一天。和推拉腿不同——那个按动作模式分，这个每次集中打一个部位，单部位容量更高。肩放在腿日。",
+      "cadence": "建议一周 3 或 6 天，按 胸 → 背 → 腿 顺序轮转",
+      "days": [
+        {
+          "name": "胸日",
+          "focus": "胸 + 三头",
+          "warmup": "push",
+          "exercises": [
+            { "exerciseId": "0025", "sets": 4, "repRange": [6, 8] },
+            { "exerciseId": "0314", "sets": 3, "repRange": [8, 12] },
+            { "exerciseId": "0188", "sets": 3, "repRange": [10, 15] },
+            { "exerciseId": "0241", "sets": 3, "repRange": [10, 15] }
+          ]
+        },
+        {
+          "name": "背日",
+          "focus": "背 + 二头",
+          "warmup": "pull",
+          "exercises": [
+            { "exerciseId": "0652", "sets": 4, "repRange": [6, 10] },
+            { "exerciseId": "0027", "sets": 4, "repRange": [6, 8] },
+            { "exerciseId": "0861", "sets": 3, "repRange": [8, 12] },
+            { "exerciseId": "0023", "sets": 3, "repRange": [8, 12] }
+          ]
+        },
+        {
+          "name": "腿日",
+          "focus": "腿 + 肩",
+          "warmup": "legs",
+          "exercises": [
+            { "exerciseId": "0043", "sets": 4, "repRange": [6, 8] },
+            { "exerciseId": "0085", "sets": 3, "repRange": [8, 10] },
+            { "exerciseId": "0739", "sets": 3, "repRange": [10, 15] },
+            { "exerciseId": "0586", "sets": 3, "repRange": [10, 15] },
+            { "exerciseId": "0594", "sets": 4, "repRange": [12, 20] },
+            { "exerciseId": "0405", "sets": 3, "repRange": [8, 12] },
+            { "exerciseId": "0334", "sets": 3, "repRange": [12, 15] }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "four-way",
+      "name": "四分化 · 胸/背/肩臂/腿",
+      "desc": "四个部位日各练一次。和上下肢分化不同——那个每次练半个身体，这个每次打一个部位。",
+      "cadence": "建议一周 4 天，按 胸 → 背 → 肩臂 → 腿 顺序轮转",
+      "days": [
+        {
+          "name": "胸日",
+          "focus": "胸上中下三束",
+          "warmup": "push",
+          "exercises": [
+            { "exerciseId": "0025", "sets": 4, "repRange": [6, 8] },
+            { "exerciseId": "0314", "sets": 3, "repRange": [8, 12] },
+            { "exerciseId": "0188", "sets": 3, "repRange": [10, 15] },
+            { "exerciseId": "0251", "sets": 3, "repRange": [8, 12] }
+          ]
+        },
+        {
+          "name": "背日",
+          "focus": "宽度 + 厚度 + 斜方",
+          "warmup": "pull",
+          "exercises": [
+            { "exerciseId": "0652", "sets": 4, "repRange": [6, 10] },
+            { "exerciseId": "0027", "sets": 4, "repRange": [6, 8] },
+            { "exerciseId": "0861", "sets": 3, "repRange": [8, 12] },
+            { "exerciseId": "0095", "sets": 3, "repRange": [10, 15] }
+          ]
+        },
+        {
+          "name": "肩臂日",
+          "focus": "三角肌三束 + 二头三头",
+          "warmup": "shoulders-arms",
+          "exercises": [
+            { "exerciseId": "0405", "sets": 4, "repRange": [8, 12] },
+            { "exerciseId": "0334", "sets": 3, "repRange": [12, 15] },
+            { "exerciseId": "0203", "sets": 3, "repRange": [12, 15] },
+            { "exerciseId": "0294", "sets": 3, "repRange": [10, 12] },
+            { "exerciseId": "0313", "sets": 3, "repRange": [10, 12] },
+            { "exerciseId": "0241", "sets": 3, "repRange": [10, 12] }
+          ]
+        },
+        {
+          "name": "腿日",
+          "focus": "股四、腘绳、小腿",
+          "warmup": "legs",
+          "exercises": [
+            { "exerciseId": "0043", "sets": 4, "repRange": [6, 8] },
+            { "exerciseId": "0085", "sets": 3, "repRange": [8, 10] },
+            { "exerciseId": "0585", "sets": 3, "repRange": [10, 15] },
+            { "exerciseId": "0586", "sets": 3, "repRange": [10, 15] },
+            { "exerciseId": "0594", "sets": 4, "repRange": [12, 20] }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "five-way",
+      "name": "五分化 · 胸/背/肩/臂/腿",
+      "desc": "每个部位单独一天，单部位容量最大。一周五练，每个部位频率低——适合能稳定一周来五次的人。",
+      "cadence": "建议一周 5 天，按 胸 → 背 → 肩 → 臂 → 腿 顺序轮转",
+      "days": [
+        {
+          "name": "胸日",
+          "focus": "胸",
+          "warmup": "push",
+          "exercises": [
+            { "exerciseId": "0025", "sets": 4, "repRange": [6, 8] },
+            { "exerciseId": "0047", "sets": 3, "repRange": [8, 10] },
+            { "exerciseId": "0314", "sets": 3, "repRange": [8, 12] },
+            { "exerciseId": "0188", "sets": 3, "repRange": [12, 15] },
+            { "exerciseId": "0251", "sets": 3, "repRange": [8, 12] }
+          ]
+        },
+        {
+          "name": "背日",
+          "focus": "背",
+          "warmup": "pull",
+          "exercises": [
+            { "exerciseId": "0652", "sets": 4, "repRange": [6, 10] },
+            { "exerciseId": "0027", "sets": 4, "repRange": [6, 8] },
+            { "exerciseId": "0861", "sets": 3, "repRange": [8, 12] },
+            { "exerciseId": "0150", "sets": 3, "repRange": [10, 12] },
+            { "exerciseId": "0095", "sets": 3, "repRange": [12, 15] }
+          ]
+        },
+        {
+          "name": "肩日",
+          "focus": "三角肌前中后三束",
+          "warmup": "shoulders-arms",
+          "exercises": [
+            { "exerciseId": "0405", "sets": 4, "repRange": [8, 12] },
+            { "exerciseId": "0334", "sets": 4, "repRange": [12, 15] },
+            { "exerciseId": "0310", "sets": 3, "repRange": [12, 15] },
+            { "exerciseId": "0203", "sets": 3, "repRange": [12, 15] }
+          ]
+        },
+        {
+          "name": "臂日",
+          "focus": "二头 + 三头",
+          "warmup": "arms",
+          "exercises": [
+            { "exerciseId": "0023", "sets": 3, "repRange": [8, 12] },
+            { "exerciseId": "0294", "sets": 3, "repRange": [10, 12] },
+            { "exerciseId": "0313", "sets": 3, "repRange": [10, 12] },
+            { "exerciseId": "0241", "sets": 3, "repRange": [10, 15] },
+            { "exerciseId": "0060", "sets": 3, "repRange": [10, 12] }
+          ]
+        },
+        {
+          "name": "腿日",
+          "focus": "股四、腘绳、臀、小腿",
+          "warmup": "legs",
+          "exercises": [
+            { "exerciseId": "0043", "sets": 4, "repRange": [6, 8] },
+            { "exerciseId": "0032", "sets": 3, "repRange": [5, 6] },
+            { "exerciseId": "0739", "sets": 3, "repRange": [10, 15] },
+            { "exerciseId": "0585", "sets": 3, "repRange": [12, 15] },
+            { "exerciseId": "0586", "sets": 3, "repRange": [12, 15] },
             { "exerciseId": "0594", "sets": 4, "repRange": [12, 20] }
           ]
         }
@@ -107,6 +281,7 @@
         {
           "name": "A 日",
           "focus": "深蹲 / 卧推 / 划船",
+          "warmup": "full",
           "exercises": [
             { "exerciseId": "0043", "sets": 5, "repRange": [5, 5] },
             { "exerciseId": "0025", "sets": 5, "repRange": [5, 5] },
@@ -116,6 +291,7 @@
         {
           "name": "B 日",
           "focus": "深蹲 / 肩推 / 硬拉",
+          "warmup": "full",
           "exercises": [
             { "exerciseId": "0043", "sets": 5, "repRange": [5, 5] },
             { "exerciseId": "0405", "sets": 5, "repRange": [5, 5] },

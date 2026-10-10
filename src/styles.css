@@ -1414,6 +1414,116 @@ button {
   font-style: normal;
 }
 
+/* ── 热身 ─────────────────────────────────── */
+.warmup {
+  display: flex;
+  gap: 11px;
+  padding: 11px 13px;
+  margin: 12px 0 4px;
+  background: var(--surface-2);
+  border-radius: 9px;
+}
+
+.warmup-label {
+  flex-shrink: 0;
+  padding-top: 1px;
+  font-size: 12px;
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.warmup-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
+
+.warmup-list li {
+  display: flex;
+  align-items: baseline;
+  gap: 9px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.warmup-name {
+  padding: 0;
+  background: none;
+  border: 0;
+  color: #d5dae2;
+  font-size: 13px;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.warmup-name:hover {
+  color: var(--accent);
+}
+
+/* 动作库里没有的热身（开合跳、绕环、空杆活动）—— 没有演示可看 */
+.warmup-name-plain {
+  color: #d5dae2;
+  white-space: normal;
+}
+
+.warmup-note {
+  font-size: 11.5px;
+  color: #6b7280;
+}
+
+.ramp {
+  margin-top: 4px;
+  font-size: 11.5px;
+  color: #8b929e;
+  font-variant-numeric: tabular-nums;
+}
+
+/* 编辑器里的热身 */
+.editor-warmup {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 10px 0 12px;
+  margin-bottom: 6px;
+  border-bottom: 1px solid var(--border);
+}
+
+.editor-warmup > .warmup-label {
+  padding: 0;
+}
+
+.editor-warmup-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.editor-warmup-row .editor-day-focus {
+  flex: 1;
+  min-width: 90px;
+  font-size: 13px;
+}
+
+.editor-warmup-link {
+  flex-shrink: 0;
+  padding: 1px 6px;
+  border-radius: 5px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 10.5px;
+}
+
+.editor-warmup-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 3px;
+}
+
 .plan-ex-last {
   margin-top: 4px;
   font-size: 11.5px;

@@ -53,6 +53,8 @@ function NumInput({
 export function ProgramEditor({ dataset, program, store, onDone }: Props) {
   // 正在为哪个训练日挑动作
   const [pickFor, setPickFor] = useState<number | null>(null);
+  // 正在为哪个训练日挑热身动作
+  const [pickWarmupFor, setPickWarmupFor] = useState<number | null>(null);
 
   return (
     <section className="program editor">
@@ -132,6 +134,55 @@ export function ProgramEditor({ dataset, program, store, onDone }: Props) {
             </div>
           </div>
 
+          <div className="editor-warmup">
+            <span className="warmup-label">热身</span>
+            {day.warmup.length === 0 && <span className="hint">这个训练日没有热身。</span>}
+            {day.warmup.map((w, wi) => (
+              <div className="editor-warmup-row" key={wi}>
+                <input
+                  className="editor-day-focus"
+                  value={w.name}
+                  placeholder="热身名称（例：开合跳）"
+                  onChange={(e) => store.setWarmup(di, wi, { name: e.target.value })}
+                />
+                <input
+                  className="editor-day-focus"
+                  value={w.note}
+                  placeholder="多久 / 几次（例：2 分钟）"
+                  onChange={(e) => store.setWarmup(di, wi, { note: e.target.value })}
+                />
+                {w.exerciseId && (
+                  <span className="editor-warmup-link" title="已关联动作库，可看演示动画">
+                    库
+                  </span>
+                )}
+                <div className="editor-ex-actions">
+                  <button onClick={() => store.moveWarmup(di, wi, -1)} disabled={wi === 0} title="上移">
+                    ↑
+                  </button>
+                  <button
+                    onClick={() => store.moveWarmup(di, wi, 1)}
+                    disabled={wi === day.warmup.length - 1}
+                    title="下移"
+                  >
+                    ↓
+                  </button>
+                  <button onClick={() => store.removeWarmup(di, wi)} title="移除">
+                    ✕
+                  </button>
+                </div>
+              </div>
+            ))}
+            <div className="editor-warmup-actions">
+              <button className="btn-add-set" onClick={() => store.addWarmup(di)}>
+                + 加一条
+              </button>
+              <button className="btn-add-set" onClick={() => setPickWarmupFor(di)}>
+                + 从动作库选（带演示）
+              </button>
+            </div>
+          </div>
+
           {day.exercises.length === 0 && <p className="hint">这个训练日还没有动作。</p>}
 
           {day.exercises.map((ex, ei) => {
@@ -199,6 +250,18 @@ export function ProgramEditor({ dataset, program, store, onDone }: Props) {
             // 不关闭：连续加几个动作是常见操作
           }}
           onClose={() => setPickFor(null)}
+        />
+      )}
+
+      {pickWarmupFor !== null && (
+        <ExercisePicker
+          dataset={dataset}
+          added={new Set()}
+          onPick={(id) => {
+            const name = dataset.byId.get(id)?.nameZh ?? id;
+            store.addWarmupFromLibrary(pickWarmupFor, id, name);
+          }}
+          onClose={() => setPickWarmupFor(null)}
         />
       )}
     </section>

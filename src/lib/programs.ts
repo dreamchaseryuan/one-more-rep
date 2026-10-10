@@ -1,5 +1,13 @@
-import type { Exercise, IndexedExercise, SetEntry, Workout, WorkoutDaySnapshot } from '../types';
-import raw from '../../data/programs.json';
+import type {
+  Exercise,
+  IndexedExercise,
+  SetEntry,
+  WarmupItem,
+  Workout,
+  WorkoutDaySnapshot,
+} from '../types';
+import rawPrograms from '../../data/programs.json';
+import rawWarmups from '../../data/warmups.json';
 
 export interface ProgramExercise {
   exerciseId: string;
@@ -11,6 +19,8 @@ export interface ProgramExercise {
 export interface ProgramDay {
   name: string;
   focus: string;
+  /** 练前的热身。已解析成具体条目 —— 模板里存的是方案名，加载时展开 */
+  warmup: WarmupItem[];
   exercises: ProgramExercise[];
 }
 
@@ -24,12 +34,55 @@ export interface Program {
   days: ProgramDay[];
 }
 
+/** programs.json 里训练日写的是热身**方案名**，加载时展开成条目 */
+interface RawDay {
+  name: string;
+  focus: string;
+  warmup?: string;
+  exercises: ProgramExercise[];
+}
+interface RawProgram {
+  id: string;
+  name: string;
+  desc?: string;
+  cadence?: string;
+  days: RawDay[];
+}
+
+/**
+ * 热身方案表。抽出来是因为 21 个训练日里有大量重复的通用热身——
+ * 每个训练日抄一遍既冗长又容易改漏。使用者在编辑器里改过某天的热身后，
+ * 那天会存成显式数组，不再引用方案。
+ */
+const WARMUP_PROFILES = (
+  rawWarmups as unknown as { profiles: Record<string, { title: string; items: WarmupItem[] }> }
+).profiles;
+
+function resolveWarmup(name: string | undefined): WarmupItem[] {
+  if (!name) return [];
+  // 方案名写错时静默返回空，会让模板少一段热身却没人发现 —— 所以 check:programs 会拦下来
+  return WARMUP_PROFILES[name]?.items ?? [];
+}
+
 /**
  * JSON 里的 repRange 只能是 number[]，推不出 [number, number] 元组，所以这里强制断言。
  * 断言的安全网是 scripts/check-programs.mjs —— 它在构建前校验每个 repRange
  * 确实是两个正整数且 low <= high，不通过就直接 fail 掉构建。
  */
-export const PROGRAMS: Program[] = (raw as unknown as { programs: Program[] }).programs;
+export const PROGRAMS: Program[] = (rawPrograms as unknown as { programs: RawProgram[] }).programs.map(
+  (p) => ({
+    id: p.id,
+    name: p.name,
+    desc: p.desc,
+    cadence: p.cadence,
+    days: p.days.map((d) => ({
+      name: d.name,
+      focus: d.focus,
+      warmup: resolveWarmup(d.warmup),
+      exercises: d.exercises,
+    })),
+  }),
+);
 
 export const getProgram = (id: string): Program | undefined => PROGRAMS.find((p) => p.id === id);
 
@@ -176,6 +229,45 @@ export function planDay(
 }
 
 export const repRangeText = ([lo, hi]: [number, number]) => (lo === hi ? `${lo} 次` : `${lo}~${hi} 次`);
+
+/** 空杆重量。递增组的第一组从这里开始。 */
+const BAR_WEIGHT = 20;
+/** 低于这个工作重量就不给递增组了：空杆已经占了太大比例，热身意义不大 */
+const RAMP_MIN_WORKING = 40;
+
+export interface RampSet {
+  weight: number;
+  reps: number;
+}
+
+/**
+ * 递增组：正式组之前，用同一个动作由轻到重热身。
+ *
+ * 这是热身里最有价值的一段——一般性热身只升体温，针对性激活只叫醒肌肉，
+ * 只有递增组能让神经系统按正式组的重量和轨迹工作一遍。而且它**能算**：
+ * 工作重量定了，几组几片就定了。
+ *
+ * 只显示、不记录 —— 热身组不算容量，也不参与「上次成绩」和加重建议。
+ */
+export function rampUpSets(workingWeight: number | null): RampSet[] {
+  if (workingWeight === null || workingWeight < RAMP_MIN_WORKING) return [];
+  const round = (x: number) => Math.max(BAR_WEIGHT, Math.round(x / 2.5) * 2.5);
+  const out: RampSet[] = [{ weight: BAR_WEIGHT, reps: 10 }];
+  for (const [pct, reps] of [
+    [0.4, 5],
+    [0.6, 3],
+    [0.8, 1],
+  ] as const) {
+    const w = round(workingWeight * pct);
+    // 别给出等于或超过工作重量的「热身组」，也别和上一组重复
+    if (w >= workingWeight) continue;
+    if (out.some((s) => s.weight === w)) continue;
+    out.push({ weight: w, reps });
+  }
+  return out;
+}
+
+export const rampText = (sets: RampSet[]) => sets.map((s) => `${s.weight}×${s.reps}`).join(' → ');
 
 /**
  * 开始训练时把当前计划安排整个抄一份，见 docs/adr/0001。

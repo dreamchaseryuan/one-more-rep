@@ -1,10 +1,11 @@
-// 校验训练计划模板：动作 ID 是否都存在、结构是否合法。
-// 模板写错一个 ID，用户点「开始」时才会发现少动作 —— 那太晚了。
-// 用法: node scripts/check-programs.mjs <programs.json> <exercises.json>
+// 校验训练模板：动作 ID 是否存在、热身方案名是否有效、结构是否合法。
+// 模板写错一个 ID 或方案名，用户点「开始」时才会发现少动作 / 少一段热身 —— 那太晚了。
+// 用法: node scripts/check-programs.mjs <programs.json> <warmups.json> <exercises.json>
 import { readFileSync } from 'node:fs';
 
-const [progPath, exPath] = process.argv.slice(2);
+const [progPath, warmPath, exPath] = process.argv.slice(2);
 const { programs } = JSON.parse(readFileSync(progPath, 'utf8'));
+const { profiles } = JSON.parse(readFileSync(warmPath, 'utf8'));
 const exercises = JSON.parse(readFileSync(exPath, 'utf8'));
 const byId = new Map(exercises.map((e) => [e.id, e]));
 
@@ -12,6 +13,32 @@ const errors = [];
 const warnings = [];
 const seenProgramIds = new Set();
 
+let dayCount = 0;
+let exCount = 0;
+let warmItemCount = 0;
+
+// ── 热身方案本身 ─────────────────────────────────────────────
+for (const [key, profile] of Object.entries(profiles)) {
+  if (!profile.title) errors.push(`热身方案「${key}」: 缺 title`);
+  if (!Array.isArray(profile.items) || !profile.items.length) {
+    errors.push(`热身方案「${key}」: items 为空`);
+    continue;
+  }
+  for (const item of profile.items) {
+    warmItemCount++;
+    if (!item.name || typeof item.name !== 'string') {
+      errors.push(`热身方案「${key}」: 有条目缺 name`);
+    }
+    if (!item.note || typeof item.note !== 'string') {
+      errors.push(`热身方案「${key}」/ ${item.name}: 缺 note（要写清做多久或几次）`);
+    }
+    if (item.exerciseId && !byId.has(item.exerciseId)) {
+      errors.push(`热身方案「${key}」/ ${item.name}: 引用的动作 id=${item.exerciseId} 不存在`);
+    }
+  }
+}
+
+// ── 模板 ─────────────────────────────────────────────────────
 for (const p of programs) {
   const where = `计划「${p.name}」`;
 
@@ -26,9 +53,24 @@ for (const p of programs) {
     continue;
   }
 
-  const usedIds = new Map(); // exerciseId -> 出现在哪些天
+  const usedIds = new Map();
+  let anyWarmup = false;
+
   for (const day of p.days) {
+    dayCount++;
     const dayWhere = `${where} 的「${day.name}」`;
+
+    // 热身方案引用
+    if (day.warmup === undefined) {
+      warnings.push(`${dayWhere}: 没有热身方案`);
+    } else if (typeof day.warmup !== 'string') {
+      errors.push(`${dayWhere}: warmup 必须是方案名（字符串），模板里不要写死数组`);
+    } else if (!profiles[day.warmup]) {
+      errors.push(`${dayWhere}: 热身方案「${day.warmup}」不存在`);
+    } else {
+      anyWarmup = true;
+    }
+
     if (!Array.isArray(day.exercises) || !day.exercises.length) {
       errors.push(`${dayWhere}: 没有动作`);
       continue;
@@ -36,14 +78,13 @@ for (const p of programs) {
 
     const inDay = new Set();
     for (const item of day.exercises) {
+      exCount++;
       const ex = byId.get(item.exerciseId);
       if (!ex) {
         errors.push(`${dayWhere}: 找不到动作 id=${item.exerciseId}`);
         continue;
       }
-      if (inDay.has(item.exerciseId)) {
-        errors.push(`${dayWhere}: 动作重复 —— ${ex.nameZh}`);
-      }
+      if (inDay.has(item.exerciseId)) errors.push(`${dayWhere}: 动作重复 —— ${ex.nameZh}`);
       inDay.add(item.exerciseId);
 
       const days = usedIds.get(item.exerciseId) ?? [];
@@ -60,14 +101,17 @@ for (const p of programs) {
     }
   }
 
-  // 同一动作在一个计划里被排到多数训练日 —— 可能是复制粘贴写错了
+  if (!anyWarmup) warnings.push(`${where}: 所有训练日都没有热身`);
+
+  // 同一动作排到多数训练日 —— 可能是复制粘贴写错了（5x5 的深蹲是有意的）
   for (const [id, days] of usedIds) {
     if (days.length > p.days.length / 2 + 0.5) {
-      warnings.push(`${where}: 「${byId.get(id)?.nameZh}」出现在 ${days.length}/${p.days.length} 天（${days.join('、')}），确认是有意为之`);
+      warnings.push(
+        `${where}: 「${byId.get(id)?.nameZh}」出现在 ${days.length}/${p.days.length} 天（${days.join('、')}），确认是有意为之`,
+      );
     }
   }
 
-  // 每个动作的实际可练性：自重动作不可能做 5x5 加重量
   for (const day of p.days) {
     for (const item of day.exercises) {
       const ex = byId.get(item.exerciseId);
@@ -78,8 +122,10 @@ for (const p of programs) {
   }
 }
 
-console.log(`校验 ${programs.length} 个计划、${programs.reduce((n, p) => n + p.days.length, 0)} 个训练日、` +
-  `${programs.reduce((n, p) => n + p.days.reduce((m, d) => m + d.exercises.length, 0), 0)} 条动作安排`);
+console.log(
+  `校验 ${programs.length} 个模板、${dayCount} 个训练日、${exCount} 条动作安排、` +
+    `${Object.keys(profiles).length} 个热身方案（${warmItemCount} 个条目）`,
+);
 
 if (warnings.length) {
   console.log(`\n提醒 ${warnings.length} 条:`);

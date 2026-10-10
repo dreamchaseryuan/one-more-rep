@@ -5,6 +5,8 @@ import {
   lastProgramDay,
   nextDayIndex,
   planDay,
+  rampText,
+  rampUpSets,
   repRangeText,
 } from '../lib/programs';
 import type { ProgramStore } from '../lib/usePrograms';
@@ -97,6 +99,10 @@ export function ProgramPanel({
   const isBlocked = (id: string) => contraStore.blocked(id) && !overrides.has(id);
   const usable = planned.filter((p) => !isBlocked(p.exerciseId));
 
+  // 递增组只给第一个有建议重量的动作 —— 全身热身做一次就够，不是每个动作都重来一遍
+  const rampFor = usable.find((p) => p.suggestion.weight !== null)?.exerciseId ?? null;
+  const ramp = rampUpSets(usable.find((p) => p.exerciseId === rampFor)?.suggestion.weight ?? null);
+
   const start = () =>
     onStartDay(
       usable.map((p) => ({ exerciseId: p.exerciseId, sets: p.presetSets })),
@@ -139,6 +145,30 @@ export function ProgramPanel({
           {day.focus && <span className="hint">{day.focus}</span>}
         </div>
 
+        {day.warmup.length > 0 && (
+          <div className="warmup">
+            <span className="warmup-label">热身</span>
+            <ol className="warmup-list">
+              {day.warmup.map((w, i) => {
+                const ex = w.exerciseId ? dataset.byId.get(w.exerciseId) : undefined;
+                return (
+                  <li key={i}>
+                    {ex ? (
+                      <button className="warmup-name" onClick={() => onOpenExercise(ex)}>
+                        {w.name}
+                      </button>
+                    ) : (
+                      // 动作库里没有的热身（开合跳、绕环、空杆活动）—— 那是健美动作库，不是热身库
+                      <span className="warmup-name warmup-name-plain">{w.name}</span>
+                    )}
+                    <span className="warmup-note">{w.note}</span>
+                  </li>
+                );
+              })}
+            </ol>
+          </div>
+        )}
+
         {planned.length === 0 && <p className="hint">这个训练日还没有动作。点「编辑」加几个。</p>}
 
         {planned.map((p) => {
@@ -177,13 +207,20 @@ export function ProgramPanel({
                 )}
               </div>
               {!blocked && (
-                <div className="plan-ex-last">
-                  {last
-                    ? `上次 ${last.date.slice(5)}：${fmtLast(last.sets)}`
-                    : elsewhere
-                      ? `本计划下还没练过（其他记录最近 ${elsewhere.date.slice(5)}：${fmtLast(elsewhere.sets)}）`
-                      : '还没有记录'}
-                </div>
+                <>
+                  <div className="plan-ex-last">
+                    {last
+                      ? `上次 ${last.date.slice(5)}：${fmtLast(last.sets)}`
+                      : elsewhere
+                        ? `本计划下还没练过（其他记录最近 ${elsewhere.date.slice(5)}：${fmtLast(elsewhere.sets)}）`
+                        : '还没有记录'}
+                  </div>
+                  {p.exerciseId === rampFor && ramp.length > 0 && (
+                    <div className="ramp">
+                      递增组：{rampText(ramp)} kg —— 不记录，只为让重量和轨迹先走一遍
+                    </div>
+                  )}
+                </>
               )}
             </div>
           );

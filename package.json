@@ -14,7 +14,7 @@
     "media:fetch": "node scripts/fetch-media.mjs public/data/exercises.json public/media",
     "media:fetch-videos": "node scripts/fetch-media.mjs public/data/exercises.json public/media --videos --concurrency=8",
     "icons": "node scripts/make-icons.mjs public/icons",
-    "check:programs": "node scripts/check-programs.mjs data/programs.json public/data/exercises.json"
+    "check:programs": "node scripts/check-programs.mjs data/programs.json data/warmups.json public/data/exercises.json"
   },
   "dependencies": {
     "react": "^19.3.0",
