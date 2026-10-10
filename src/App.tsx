@@ -2,11 +2,20 @@ import { useDeferredValue, useEffect, useMemo, useState } from 'react';
 import { applyFilters, loadDataset, search, type Dataset } from './lib/data';
 import { useFavorites } from './lib/useFavorites';
 import { useWorkouts } from './lib/useWorkouts';
-import { EMPTY_FILTERS, type Filters, type IndexedExercise, type Tab } from './types';
+import { useProgram } from './lib/useProgram';
+import {
+  EMPTY_FILTERS,
+  type Filters,
+  type IndexedExercise,
+  type LoggedExercise,
+  type Tab,
+  type WorkoutDaySnapshot,
+} from './types';
 import { FilterBar } from './components/FilterBar';
 import { ExerciseCard } from './components/ExerciseCard';
 import { DetailPanel } from './components/DetailPanel';
 import { WorkoutPanel } from './components/WorkoutPanel';
+import { ProgramPanel } from './components/ProgramPanel';
 
 const PAGE_SIZE = 48;
 
@@ -21,6 +30,11 @@ export default function App() {
   const [visible, setVisible] = useState(PAGE_SIZE);
   const { ids: favorites, toggle: toggleFavorite, merge: mergeFavorites } = useFavorites();
   const store = useWorkouts();
+  const programStore = useProgram();
+
+  const startProgramDay = (entries: LoggedExercise[], day: WorkoutDaySnapshot) => {
+    store.startWithEntries(entries, day);
+  };
 
   useEffect(() => {
     loadDataset()
@@ -165,13 +179,24 @@ export default function App() {
             )}
           </>
         ) : (
-          <WorkoutPanel
-            dataset={dataset}
-            store={store}
-            onOpenExercise={setSelected}
-            favorites={favorites}
-            onMergeFavorites={mergeFavorites}
-          />
+          <>
+            <ProgramPanel
+              dataset={dataset}
+              store={store}
+              programStore={programStore}
+              onOpenExercise={setSelected}
+              onStartDay={startProgramDay}
+            />
+            <WorkoutPanel
+              dataset={dataset}
+              store={store}
+              onOpenExercise={setSelected}
+              favorites={favorites}
+              onMergeFavorites={mergeFavorites}
+              programId={programStore.program?.id ?? null}
+              onProgramRestored={programStore.select}
+            />
+          </>
         )}
       </main>
 

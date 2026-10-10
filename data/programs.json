@@ -1,0 +1,128 @@
+{
+  "_comment": "内置训练计划。exerciseId 对应 public/data/exercises.json 的 id，改模板后跑 npm run check:programs 校验。repRange 是 [下限, 上限]，次数做到上限就是该加重量了。",
+  "programs": [
+    {
+      "id": "ppl",
+      "name": "推拉腿",
+      "desc": "按推、拉、腿三个功能日轮转。动作覆盖最全，一周练 3~6 天都可以。",
+      "cadence": "建议一周 3 或 6 天，按 推 → 拉 → 腿 顺序轮转",
+      "days": [
+        {
+          "name": "推日",
+          "focus": "胸、肩、三头",
+          "exercises": [
+            { "exerciseId": "0025", "sets": 4, "repRange": [6, 8] },
+            { "exerciseId": "0314", "sets": 3, "repRange": [8, 12] },
+            { "exerciseId": "0405", "sets": 3, "repRange": [8, 12] },
+            { "exerciseId": "0334", "sets": 3, "repRange": [12, 15] },
+            { "exerciseId": "0241", "sets": 3, "repRange": [10, 15] }
+          ]
+        },
+        {
+          "name": "拉日",
+          "focus": "背、二头、后束",
+          "exercises": [
+            { "exerciseId": "0652", "sets": 4, "repRange": [6, 10] },
+            { "exerciseId": "0027", "sets": 4, "repRange": [6, 8] },
+            { "exerciseId": "0861", "sets": 3, "repRange": [8, 12] },
+            { "exerciseId": "0203", "sets": 3, "repRange": [12, 15] },
+            { "exerciseId": "0023", "sets": 3, "repRange": [8, 12] }
+          ]
+        },
+        {
+          "name": "腿日",
+          "focus": "股四、腘绳、臀、小腿",
+          "exercises": [
+            { "exerciseId": "0043", "sets": 4, "repRange": [6, 8] },
+            { "exerciseId": "0085", "sets": 3, "repRange": [8, 10] },
+            { "exerciseId": "0739", "sets": 3, "repRange": [10, 15] },
+            { "exerciseId": "0586", "sets": 3, "repRange": [10, 15] },
+            { "exerciseId": "0594", "sets": 4, "repRange": [12, 20] }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "upper-lower",
+      "name": "上下肢分化",
+      "desc": "上肢日与下肢日交替，每个部位一周练两次。适合一周 4 天。",
+      "cadence": "建议一周 4 天，按 上肢A → 下肢A → 上肢B → 下肢B 轮转",
+      "days": [
+        {
+          "name": "上肢 A",
+          "focus": "水平推拉为主",
+          "exercises": [
+            { "exerciseId": "0025", "sets": 4, "repRange": [6, 8] },
+            { "exerciseId": "0027", "sets": 4, "repRange": [6, 8] },
+            { "exerciseId": "0405", "sets": 3, "repRange": [8, 12] },
+            { "exerciseId": "0150", "sets": 3, "repRange": [8, 12] },
+            { "exerciseId": "0294", "sets": 3, "repRange": [10, 12] },
+            { "exerciseId": "0241", "sets": 3, "repRange": [10, 12] }
+          ]
+        },
+        {
+          "name": "下肢 A",
+          "focus": "深蹲主导",
+          "exercises": [
+            { "exerciseId": "0043", "sets": 4, "repRange": [6, 8] },
+            { "exerciseId": "0085", "sets": 3, "repRange": [8, 10] },
+            { "exerciseId": "0585", "sets": 3, "repRange": [10, 12] },
+            { "exerciseId": "0586", "sets": 3, "repRange": [10, 12] },
+            { "exerciseId": "0594", "sets": 4, "repRange": [12, 20] },
+            { "exerciseId": "0274", "sets": 3, "repRange": [15, 20] }
+          ]
+        },
+        {
+          "name": "上肢 B",
+          "focus": "上斜推与垂直拉",
+          "exercises": [
+            { "exerciseId": "0047", "sets": 4, "repRange": [8, 12] },
+            { "exerciseId": "0150", "sets": 4, "repRange": [8, 12] },
+            { "exerciseId": "0334", "sets": 3, "repRange": [12, 15] },
+            { "exerciseId": "0861", "sets": 3, "repRange": [10, 12] },
+            { "exerciseId": "0203", "sets": 3, "repRange": [12, 15] },
+            { "exerciseId": "0241", "sets": 3, "repRange": [10, 12] }
+          ]
+        },
+        {
+          "name": "下肢 B",
+          "focus": "硬拉主导",
+          "exercises": [
+            { "exerciseId": "0032", "sets": 4, "repRange": [5, 6] },
+            { "exerciseId": "0042", "sets": 3, "repRange": [8, 12] },
+            { "exerciseId": "0585", "sets": 3, "repRange": [10, 15] },
+            { "exerciseId": "1409", "sets": 3, "repRange": [10, 12] },
+            { "exerciseId": "0586", "sets": 3, "repRange": [10, 12] },
+            { "exerciseId": "0594", "sets": 4, "repRange": [12, 20] }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "five-by-five",
+      "name": "5x5 力量",
+      "desc": "低次数大重量的基础力量计划，只有 3 个动作一天。每次加 2.5kg 往上推。",
+      "cadence": "建议一周 3 天，A/B 交替：A → B → A → B",
+      "days": [
+        {
+          "name": "A 日",
+          "focus": "深蹲 / 卧推 / 划船",
+          "exercises": [
+            { "exerciseId": "0043", "sets": 5, "repRange": [5, 5] },
+            { "exerciseId": "0025", "sets": 5, "repRange": [5, 5] },
+            { "exerciseId": "0027", "sets": 5, "repRange": [5, 5] }
+          ]
+        },
+        {
+          "name": "B 日",
+          "focus": "深蹲 / 肩推 / 硬拉",
+          "exercises": [
+            { "exerciseId": "0043", "sets": 5, "repRange": [5, 5] },
+            { "exerciseId": "0405", "sets": 5, "repRange": [5, 5] },
+            { "exerciseId": "0032", "sets": 1, "repRange": [5, 5] }
+          ]
+        }
+      ]
+    }
+  ]
+}

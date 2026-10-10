@@ -1,8 +1,9 @@
 import { useRef, useState } from 'react';
 import type { Dataset } from '../lib/data';
 import type { WorkoutStore } from '../lib/useWorkouts';
-import { workoutVolume } from '../lib/useWorkouts';
+import { filledSetCount, workoutVolume } from '../lib/useWorkouts';
 import { buildBackup, downloadBackup, parseBackup } from '../lib/backup';
+import { repRangeText } from '../lib/programs';
 import type { IndexedExercise, SetEntry } from '../types';
 import { ExercisePicker } from './ExercisePicker';
 import { RestTimer } from './RestTimer';
@@ -14,6 +15,10 @@ interface Props {
   onOpenExercise: (e: IndexedExercise) => void;
   favorites: Set<string>;
   onMergeFavorites: (ids: string[]) => void;
+  /** 当前计划的 id，备份要带上它 */
+  programId: string | null;
+  /** 从备份里恢复出了计划选择时通知外层 */
+  onProgramRestored: (programId: string) => void;
 }
 
 /** 把一组压缩成 "60×8" 这种紧凑写法 */
@@ -21,7 +26,15 @@ const fmtSet = (s: SetEntry) => (s.weight ? `${s.weight}×${s.reps || '?'}` : `$
 
 const fmtSets = (sets: SetEntry[]) => sets.map(fmtSet).join('，');
 
-export function WorkoutPanel({ dataset, store, onOpenExercise, favorites, onMergeFavorites }: Props) {
+export function WorkoutPanel({
+  dataset,
+  store,
+  onOpenExercise,
+  favorites,
+  onMergeFavorites,
+  programId,
+  onProgramRestored,
+}: Props) {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [resting, setResting] = useState(false);
   const [restRun, setRestRun] = useState(0);
@@ -33,23 +46,27 @@ export function WorkoutPanel({ dataset, store, onOpenExercise, favorites, onMerg
   const { current, history } = store;
 
   const handleExport = () => {
-    downloadBackup(buildBackup(store.workouts, [...favorites]));
+    downloadBackup(buildBackup(store.workouts, [...favorites], programId));
     setImportMsg(null);
   };
 
   const handleImport = async (file: File) => {
-    const { backup, error, skipped } = parseBackup(await file.text());
+    const { backup, error, skipped, fromVersion } = parseBackup(await file.text());
     if (error || !backup) {
       setImportMsg(`导入失败：${error}`);
       return;
     }
     const added = store.importWorkouts(backup.workouts);
     onMergeFavorites(backup.favorites);
+    if (backup.programId) onProgramRestored(backup.programId);
+
     const dup = backup.workouts.length - added;
     setImportMsg(
       `导入完成：新增 ${added} 次训练` +
         (dup > 0 ? `，${dup} 条已存在（跳过）` : '') +
-        (skipped > 0 ? `，${skipped} 条格式不对（跳过）` : ''),
+        (skipped > 0 ? `，${skipped} 条格式不对（跳过）` : '') +
+        // v1 备份没有计划字段和训练日快照，历史里那些记录会显示成「自由训练」
+        (fromVersion < 2 ? '。这是旧版备份：其中的训练不会关联到计划' : ''),
     );
   };
 
@@ -75,14 +92,26 @@ export function WorkoutPanel({ dataset, store, onOpenExercise, favorites, onMerg
         <section className="today">
           <header className="today-head">
             <div>
-              <h2>今日训练</h2>
+              <h2>
+                今日训练
+                {current.day && (
+                  <span className="today-day">
+                    {current.day.programName} · {current.day.dayName}
+                  </span>
+                )}
+              </h2>
               <p className="today-sub">
                 {current.date} · {current.entries.length} 个动作 · 总容量{' '}
                 {Math.round(workoutVolume(current))} kg
               </p>
             </div>
             <div className="today-actions">
-              <button className="btn-primary" onClick={store.finish} disabled={!current.entries.length}>
+              <button
+                className="btn-primary"
+                onClick={store.finish}
+                disabled={filledSetCount(current) === 0}
+                title={filledSetCount(current) === 0 ? '先打勾至少一组，或填上重量' : undefined}
+              >
                 结束训练
               </button>
               <button className="btn-text" onClick={store.discard}>
@@ -97,7 +126,8 @@ export function WorkoutPanel({ dataset, store, onOpenExercise, favorites, onMerg
 
           {current.entries.map((entry) => {
             const ex = exOf(entry.exerciseId);
-            const last = store.lastPerformance(entry.exerciseId);
+            // 「上次」限定在这次训练所属的计划内 —— 自由训练传 null
+            const last = store.lastPerformance(entry.exerciseId, current.day?.programId ?? null);
             const best = store.bestSet(entry.exerciseId);
             return (
               <article className="ex-block" key={entry.exerciseId}>
@@ -227,6 +257,9 @@ export function WorkoutPanel({ dataset, store, onOpenExercise, favorites, onMerg
                   onClick={() => setExpanded(open ? null : w.id)}
                 >
                   <span className="hist-date">{w.date}</span>
+                  <span className="hist-day">
+                    {w.day ? w.day.dayName : '自由训练'}
+                  </span>
                   <span className="hist-sum">
                     {w.entries.length} 个动作 · {Math.round(workoutVolume(w))} kg
                   </span>
@@ -235,13 +268,29 @@ export function WorkoutPanel({ dataset, store, onOpenExercise, favorites, onMerg
 
                 {open && (
                   <div className="hist-body">
-                    {w.entries.map((e) => (
-                      <div className="hist-ex" key={e.exerciseId}>
-                        <span className="hist-ex-name">{nameOf(e.exerciseId)}</span>
-                        <span className="hist-ex-sets">{fmtSets(e.sets)}</span>
-                        <ProgressChart points={store.weightHistory(e.exerciseId)} />
-                      </div>
-                    ))}
+                    {w.entries.map((e) => {
+                      const snap = w.day?.exercises.find((s) => s.exerciseId === e.exerciseId);
+                      // 快照里有当时的动作中文名 —— 动作从库里下架后历史仍读得懂
+                      const name = snap?.nameZh ?? nameOf(e.exerciseId);
+                      return (
+                        <div className="hist-ex" key={e.exerciseId}>
+                          <span className="hist-ex-name">
+                            {name}
+                            {w.day && !snap && <span className="hist-extra">计划外</span>}
+                          </span>
+                          <span className="hist-ex-sets">{fmtSets(e.sets)}</span>
+                          {snap && (
+                            <span className="hist-plan">
+                              计划 {snap.sets} 组 × {repRangeText(snap.repRange)}
+                              {e.sets.length !== snap.sets && (
+                                <em className="hist-deviation"> · 实际做了 {e.sets.length} 组</em>
+                              )}
+                            </span>
+                          )}
+                          <ProgressChart points={store.weightHistory(e.exerciseId)} />
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
               </div>

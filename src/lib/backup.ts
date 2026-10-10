@@ -1,7 +1,15 @@
 import type { Workout } from '../types';
+import { localDate } from './date';
 
 const APP_TAG = 'fitness-app';
-const VERSION = 1;
+
+/**
+ * 版本历史：
+ *   1 — workouts + favorites
+ *   2 — 加入 programId；workouts 里出现 day 快照（见 docs/adr/0001）。
+ *       Workout 变多了但结构向后兼容，v1 的备份仍能导入。
+ */
+const VERSION = 2;
 
 export interface Backup {
   app: typeof APP_TAG;
@@ -9,15 +17,22 @@ export interface Backup {
   exportedAt: string;
   workouts: Workout[];
   favorites: string[];
+  /** 当前跟随的计划。选了哪套计划也是不可再生的使用者数据，v1 漏了它。 */
+  programId: string | null;
 }
 
-export function buildBackup(workouts: Workout[], favorites: string[]): Backup {
+export function buildBackup(
+  workouts: Workout[],
+  favorites: string[],
+  programId: string | null,
+): Backup {
   return {
     app: APP_TAG,
     version: VERSION,
     exportedAt: new Date().toISOString(),
     workouts,
     favorites,
+    programId,
   };
 }
 
@@ -27,7 +42,8 @@ export function downloadBackup(backup: Backup) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `健身记录-${backup.exportedAt.slice(0, 10)}.json`;
+  // 用本地日期：exportedAt 是 UTC 时间戳，直接截前 10 位会在晚上差一天（见 lib/date.ts）
+  a.download = `健身记录-${localDate()}.json`;
   a.click();
   URL.revokeObjectURL(url);
 }
@@ -57,6 +73,8 @@ export interface ParseResult {
   error: string | null;
   /** 形状不对被丢掉的条数 */
   skipped: number;
+  /** 这个备份是什么版本 —— 界面据此提示「这是旧版备份」 */
+  fromVersion: number;
 }
 
 export function parseBackup(text: string): ParseResult {
@@ -64,30 +82,34 @@ export function parseBackup(text: string): ParseResult {
   try {
     raw = JSON.parse(text);
   } catch {
-    return { backup: null, error: '不是合法的 JSON 文件', skipped: 0 };
+    return { backup: null, error: '不是合法的 JSON 文件', skipped: 0, fromVersion: 0 };
   }
   if (typeof raw !== 'object' || raw === null) {
-    return { backup: null, error: '文件内容不是一个对象', skipped: 0 };
+    return { backup: null, error: '文件内容不是一个对象', skipped: 0, fromVersion: 0 };
   }
 
   const b = raw as Partial<Backup>;
   if (b.app !== APP_TAG) {
-    return { backup: null, error: '这不是本应用的备份文件', skipped: 0 };
+    return { backup: null, error: '这不是本应用的备份文件', skipped: 0, fromVersion: 0 };
   }
   if (!Array.isArray(b.workouts)) {
-    return { backup: null, error: '备份里没有 workouts 字段', skipped: 0 };
+    return { backup: null, error: '备份里没有 workouts 字段', skipped: 0, fromVersion: 0 };
   }
 
   const good = b.workouts.filter(isWorkout);
+  const fromVersion = typeof b.version === 'number' ? b.version : 1;
   return {
     backup: {
       app: APP_TAG,
-      version: typeof b.version === 'number' ? b.version : VERSION,
+      version: VERSION,
       exportedAt: typeof b.exportedAt === 'string' ? b.exportedAt : '',
       workouts: good,
       favorites: Array.isArray(b.favorites) ? b.favorites.filter((f) => typeof f === 'string') : [],
+      // v1 没有这个字段 —— 缺省成「没选计划」，不要去猜
+      programId: typeof b.programId === 'string' ? b.programId : null,
     },
     error: null,
     skipped: b.workouts.length - good.length,
+    fromVersion,
   };
 }

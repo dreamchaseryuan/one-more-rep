@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc --noEmit && vite build",
+    "build": "npm run check:programs && tsc --noEmit && vite build",
     "typecheck": "tsc --noEmit",
     "preview": "vite preview",
     "data:fetch-raw": "node scripts/fetch-raw.mjs data",
@@ -13,7 +13,8 @@
     "data:profile": "node scripts/profile.mjs data/exercises.json data/name_zh.json",
     "media:fetch": "node scripts/fetch-media.mjs public/data/exercises.json public/media",
     "media:fetch-videos": "node scripts/fetch-media.mjs public/data/exercises.json public/media --videos --concurrency=8",
-    "icons": "node scripts/make-icons.mjs public/icons"
+    "icons": "node scripts/make-icons.mjs public/icons",
+    "check:programs": "node scripts/check-programs.mjs data/programs.json public/data/exercises.json"
   },
   "dependencies": {
     "react": "^19.3.0",

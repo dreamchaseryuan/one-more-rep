@@ -951,6 +951,244 @@ button {
   font-variant-numeric: tabular-nums;
 }
 
+/* ── 训练计划 ─────────────────────────────── */
+.program {
+  margin-bottom: 26px;
+}
+
+.program-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.program-head .hint {
+  display: block;
+  margin: 4px 0 0;
+}
+
+.program-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.program-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 15px 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  text-align: left;
+  transition: border-color 0.15s, transform 0.15s;
+}
+
+.program-card:hover {
+  border-color: var(--accent);
+  transform: translateY(-2px);
+}
+
+.program-card strong {
+  font-size: 15.5px;
+}
+
+.program-card-desc {
+  font-size: 12.5px;
+  color: #a8b0bc;
+  line-height: 1.55;
+}
+
+.program-card-meta {
+  font-size: 11.5px;
+  color: var(--accent);
+}
+
+.program-card-cadence {
+  font-size: 11.5px;
+  color: #5f6673;
+}
+
+.day-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin: 12px 0;
+}
+
+.day-tab {
+  padding: 6px 13px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--dim);
+  font-size: 13.5px;
+}
+
+.day-tab:hover {
+  color: var(--text);
+}
+
+.day-tab-on {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.plan-day {
+  padding: 15px 17px 17px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.plan-day-head {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding-bottom: 11px;
+  margin-bottom: 4px;
+  border-bottom: 1px solid var(--border);
+}
+
+.plan-day-head strong {
+  font-size: 15.5px;
+}
+
+.plan-ex {
+  padding: 11px 0;
+  border-bottom: 1px solid rgba(38, 43, 52, 0.55);
+}
+
+.plan-ex-main {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.plan-ex-name {
+  padding: 0;
+  background: none;
+  border: 0;
+  font-size: 14.5px;
+  font-weight: 600;
+  text-align: left;
+}
+
+.plan-ex-name:hover {
+  color: var(--accent);
+}
+
+.plan-ex-scheme {
+  font-size: 12px;
+  color: var(--dim);
+  font-variant-numeric: tabular-nums;
+}
+
+.plan-ex-suggest {
+  margin-left: auto;
+  padding: 2px 9px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.suggest-increase {
+  background: rgba(74, 222, 128, 0.14);
+  color: #4ade80;
+}
+
+.suggest-hold {
+  background: var(--surface-2);
+  color: #c3c9d4;
+}
+
+.suggest-new {
+  background: var(--surface-2);
+  color: var(--dim);
+}
+
+.suggest-bodyweight {
+  background: rgba(96, 165, 250, 0.14);
+  color: #60a5fa;
+}
+
+.day-tab-hint {
+  margin-left: 5px;
+  padding: 0 4px;
+  border-radius: 4px;
+  background: rgba(74, 222, 128, 0.16);
+  color: #4ade80;
+  font-size: 10px;
+}
+
+.today-day {
+  margin-left: 9px;
+  padding: 2px 8px;
+  border-radius: 6px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 500;
+  vertical-align: 2px;
+}
+
+.hist-day {
+  padding: 1px 7px;
+  border-radius: 5px;
+  background: var(--surface-2);
+  color: var(--dim);
+  font-size: 11.5px;
+}
+
+.hist-extra {
+  margin-left: 7px;
+  padding: 1px 6px;
+  border-radius: 5px;
+  background: rgba(96, 165, 250, 0.14);
+  color: #60a5fa;
+  font-size: 10.5px;
+  font-weight: 400;
+}
+
+.hist-plan {
+  display: block;
+  margin-top: 3px;
+  font-size: 11.5px;
+  color: #5f6673;
+  font-variant-numeric: tabular-nums;
+}
+
+.hist-deviation {
+  color: var(--accent);
+  font-style: normal;
+}
+
+.plan-ex-last {
+  margin-top: 4px;
+  font-size: 11.5px;
+  color: #5f6673;
+  font-variant-numeric: tabular-nums;
+}
+
+.plan-start {
+  margin-top: 14px;
+}
+
+.plan-day > .hint:last-child {
+  display: block;
+  line-height: 1.65;
+}
+
+.plan-day > .hint strong {
+  color: var(--accent);
+}
+
 /* ── 数据备份 ─────────────────────────────── */
 .backup {
   padding: 16px 17px;

@@ -1,19 +1,26 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import type { LoggedExercise, SetEntry, Workout } from '../types';
+import { localDate } from './date';
+import type { LoggedExercise, SetEntry, Workout, WorkoutDaySnapshot } from '../types';
 
 const KEY = 'fitness:workouts';
 
-/** 本地日期 YYYY-MM-DD（不能用 toISOString，那是 UTC，晚上练会记成第二天） */
-export function today(): string {
-  const d = new Date();
-  const p = (n: number) => String(n).padStart(2, '0');
-  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
-}
+/** 本地日期 YYYY-MM-DD。为什么不能用 toISOString，见 lib/date.ts */
+export const today = localDate;
 
 const newSet = (): SetEntry => ({ weight: '', reps: '', done: false });
 
-/** 一组是否算「有效记录」——填了重量或次数就算 */
-export const isFilled = (s: SetEntry) => s.weight !== '' || s.reps !== '';
+/**
+ * 一组是否算「实际做了」。
+ *
+ * 关键是不能把计划预填的组算进来：预填只写了建议值，用户没碰过就说明没练。
+ * 所以要求 touched —— 打勾算，自己填了重量也算（可能忘了打勾）。
+ */
+export const isFilled = (s: SetEntry) =>
+  s.done || (s.touched === true && (s.weight !== '' || s.reps !== ''));
+
+/** 一次训练里实际做了几组，用来决定「结束训练」能不能点 */
+export const filledSetCount = (w: Workout) =>
+  w.entries.reduce((n, e) => n + e.sets.filter(isFilled).length, 0);
 
 /** 容量 = 重量 × 次数。自重动作（没填重量）按 0 计，不污染总量。 */
 export function setVolume(s: SetEntry): number {
@@ -23,8 +30,12 @@ export function setVolume(s: SetEntry): number {
   return w * r;
 }
 
+/** 只统计实际做了的组，否则计划预填的重量会把容量虚高显示 */
 export const workoutVolume = (w: Workout) =>
-  w.entries.reduce((sum, e) => sum + e.sets.reduce((s, x) => s + setVolume(x), 0), 0);
+  w.entries.reduce(
+    (sum, e) => sum + e.sets.reduce((s, x) => s + (isFilled(x) ? setVolume(x) : 0), 0),
+    0,
+  );
 
 /** 先按日期、再按结束时间倒序 —— 同一天练两次也要分得清 */
 const byRecency = (a: Workout, b: Workout) =>
@@ -82,15 +93,20 @@ export function useWorkouts() {
   }, []);
 
   const finish = useCallback(() => {
-    patchCurrent((w) => ({
-      ...w,
-      finishedAt: new Date().toISOString(),
-      // 把没打的勾也补上，避免记录里留着半空的行
-      entries: w.entries
-        .map((e) => ({ ...e, sets: e.sets.filter(isFilled) }))
-        .filter((e) => e.sets.length > 0),
-    }));
-  }, [patchCurrent]);
+    setWorkouts((prev) =>
+      prev
+        .map((w) => {
+          if (w.finishedAt) return w;
+          // 丢掉计划预填但你根本没碰的组，以及因此变空的动作
+          const entries = w.entries
+            .map((e) => ({ ...e, sets: e.sets.filter(isFilled) }))
+            .filter((e) => e.sets.length > 0);
+          // 一组都没实际做，就别留一条 "0 个动作" 的空记录在历史里
+          return entries.length ? { ...w, finishedAt: new Date().toISOString(), entries } : null;
+        })
+        .filter((w): w is Workout => w !== null),
+    );
+  }, []);
 
   const addExercise = useCallback(
     (exerciseId: string) => {
@@ -121,7 +137,10 @@ export function useWorkouts() {
 
   const updateSet = useCallback(
     (exerciseId: string, index: number, patch: Partial<SetEntry>) =>
-      mutateSets(exerciseId, (sets) => sets.map((s, i) => (i === index ? { ...s, ...patch } : s))),
+      mutateSets(exerciseId, (sets) =>
+        // 只要经手过就标 touched —— 这是「预填」和「实际做了」的分界线
+        sets.map((s, i) => (i === index ? { ...s, ...patch, touched: true } : s)),
+      ),
     [mutateSets],
   );
 
@@ -142,6 +161,25 @@ export function useWorkouts() {
   );
 
   /**
+   * 按下计划打开一次训练：整天的动作连同建议重量次数一起填好，并把当时的计划安排抄进快照。
+   * 已有进行中的训练时按动作 id 合并（同动作用计划里的覆盖），不整条丢掉 ——
+   * 否则使用者手动加的动作会凭空消失。
+   */
+  const startWithEntries = useCallback((entries: LoggedExercise[], day?: WorkoutDaySnapshot) => {
+    setWorkouts((prev) => {
+      const active = prev.find((w) => !w.finishedAt);
+      if (active) {
+        const merged = new Map(active.entries.map((e) => [e.exerciseId, e]));
+        for (const e of entries) merged.set(e.exerciseId, e);
+        return prev.map((w) =>
+          w.finishedAt ? w : { ...w, entries: [...merged.values()], ...(day ? { day } : {}) },
+        );
+      }
+      return [...prev, { id: crypto.randomUUID(), date: today(), entries, ...(day ? { day } : {}) }];
+    });
+  }, []);
+
+  /**
    * 导入备份。按 id 去重、只增不改 —— 导入永远不该弄丢或覆盖现有记录。
    * 返回实际新增的条数（在外面算，因为 setState 是异步的，拿不到即时结果）。
    */
@@ -155,8 +193,27 @@ export function useWorkouts() {
     [workouts],
   );
 
-  /** 上次练这个动作时做了什么 —— 渐进超负荷全靠它 */
+  /**
+   * 上次练这个动作时做了什么 —— 渐进超负荷全靠它。
+   *
+   * `scopeProgramId` 必须显式传：不同计划的训练意图不同（增肌 5 次 vs 减脂 15 次），
+   * 成绩不可比。减脂期的「60kg 做满 15 次该加重」搬到增肌期就荒谬了 —— 你本来是 80kg。
+   * 自由训练自成一组，传 null。详见对话记录里那个 3 个月后切回增肌期的场景。
+   */
   const lastPerformance = useCallback(
+    (exerciseId: string, scopeProgramId: string | null): { sets: SetEntry[]; date: string } | null => {
+      for (const w of history) {
+        if ((w.day?.programId ?? null) !== scopeProgramId) continue;
+        const e = w.entries.find((x) => x.exerciseId === exerciseId);
+        if (e?.sets.length) return { sets: e.sets, date: w.date };
+      }
+      return null;
+    },
+    [history],
+  );
+
+  /** 不受计划限制的最近一次 —— 界面上用来提示「其他计划里练过」 */
+  const lastPerformanceAnyScope = useCallback(
     (exerciseId: string): { sets: SetEntry[]; date: string } | null => {
       for (const w of history) {
         const e = w.entries.find((x) => x.exerciseId === exerciseId);
@@ -210,6 +267,7 @@ export function useWorkouts() {
     history,
     start,
     startWith,
+    startWithEntries,
     discard,
     finish,
     importWorkouts,
@@ -219,6 +277,7 @@ export function useWorkouts() {
     addSet,
     removeSet,
     lastPerformance,
+    lastPerformanceAnyScope,
     bestSet,
     weightHistory,
   };
