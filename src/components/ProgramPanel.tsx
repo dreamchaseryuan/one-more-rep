@@ -9,6 +9,7 @@ import {
 } from '../lib/programs';
 import type { ProgramStore } from '../lib/usePrograms';
 import type { WorkoutStore } from '../lib/useWorkouts';
+import type { ContraindicationStore } from '../lib/useContraindications';
 import type { IndexedExercise, LoggedExercise, WorkoutDaySnapshot } from '../types';
 import { ProgramList } from './ProgramList';
 import { ProgramEditor } from './ProgramEditor';
@@ -17,6 +18,7 @@ interface Props {
   dataset: Dataset;
   store: WorkoutStore;
   programStore: ProgramStore;
+  contraStore: ContraindicationStore;
   onOpenExercise: (e: IndexedExercise) => void;
   onStartDay: (entries: LoggedExercise[], day: WorkoutDaySnapshot) => void;
 }
@@ -24,11 +26,20 @@ interface Props {
 const fmtLast = (sets: { weight: string; reps: string }[]) =>
   sets.map((s) => (s.weight ? `${s.weight}×${s.reps}` : `${s.reps}次`)).join('，');
 
-export function ProgramPanel({ dataset, store, programStore, onOpenExercise, onStartDay }: Props) {
+export function ProgramPanel({
+  dataset,
+  store,
+  programStore,
+  contraStore,
+  onOpenExercise,
+  onStartDay,
+}: Props) {
   const { program } = programStore;
   const [manual, setManual] = useState<number | null>(null);
   const [editing, setEditing] = useState(false);
   const [managing, setManaging] = useState(false);
+  /** 这次训练里被「仍要练」覆盖掉的禁忌。只对当前这次有效，不改禁忌标记。 */
+  const [overrides, setOverrides] = useState<Set<string>>(new Set());
 
   // 轮转位置从训练历史推导，不存状态 —— 见 usePrograms.ts 的说明
   const derived = program ? nextDayIndex(program, lastProgramDay(store.workouts, program.id)) : 0;
@@ -81,10 +92,15 @@ export function ProgramPanel({ dataset, store, programStore, onOpenExercise, onS
 
   // 加重建议只看同一计划下的成绩：不同计划的训练意图不同，成绩不可比
   const planned = planDay(day, dataset.byId, (id) => store.lastPerformance(id, program.id));
+
+  // 伤病禁忌挡掉的动作，这次不练；除非当场点了「仍要练」
+  const isBlocked = (id: string) => contraStore.blocked(id) && !overrides.has(id);
+  const usable = planned.filter((p) => !isBlocked(p.exerciseId));
+
   const start = () =>
     onStartDay(
-      planned.map((p) => ({ exerciseId: p.exerciseId, sets: p.presetSets })),
-      buildDaySnapshot(program, dayIndex, dataset.byId),
+      usable.map((p) => ({ exerciseId: p.exerciseId, sets: p.presetSets })),
+      buildDaySnapshot(program, dayIndex, dataset.byId, (id) => !isBlocked(id)),
     );
 
   return (
@@ -128,8 +144,10 @@ export function ProgramPanel({ dataset, store, programStore, onOpenExercise, onS
         {planned.map((p) => {
           const last = store.lastPerformance(p.exerciseId, program.id);
           const elsewhere = last ? null : store.lastPerformanceAnyScope(p.exerciseId);
+          const contra = contraStore.get(p.exerciseId);
+          const blocked = isBlocked(p.exerciseId);
           return (
-            <div className="plan-ex" key={p.exerciseId}>
+            <div className={`plan-ex ${blocked ? 'plan-ex-blocked' : ''}`} key={p.exerciseId}>
               <div className="plan-ex-main">
                 <button
                   className="plan-ex-name"
@@ -140,25 +158,52 @@ export function ProgramPanel({ dataset, store, programStore, onOpenExercise, onS
                 <span className="plan-ex-scheme">
                   {p.sets} 组 × {repRangeText(p.repRange)}
                 </span>
-                <span className={`plan-ex-suggest suggest-${p.suggestion.kind}`}>
-                  {p.suggestion.text}
-                </span>
+                {blocked ? (
+                  <span className="plan-ex-contra">
+                    伤病禁忌
+                    {contra?.note ? ` · ${contra.note}` : ''}
+                    <button
+                      className="plan-ex-override"
+                      onClick={() => setOverrides((prev) => new Set(prev).add(p.exerciseId))}
+                      title="今天感觉可以，照常练"
+                    >
+                      仍要练
+                    </button>
+                  </span>
+                ) : (
+                  <span className={`plan-ex-suggest suggest-${p.suggestion.kind}`}>
+                    {p.suggestion.text}
+                  </span>
+                )}
               </div>
-              <div className="plan-ex-last">
-                {last
-                  ? `上次 ${last.date.slice(5)}：${fmtLast(last.sets)}`
-                  : elsewhere
-                    ? `本计划下还没练过（其他记录最近 ${elsewhere.date.slice(5)}：${fmtLast(elsewhere.sets)}）`
-                    : '还没有记录'}
-              </div>
+              {!blocked && (
+                <div className="plan-ex-last">
+                  {last
+                    ? `上次 ${last.date.slice(5)}：${fmtLast(last.sets)}`
+                    : elsewhere
+                      ? `本计划下还没练过（其他记录最近 ${elsewhere.date.slice(5)}：${fmtLast(elsewhere.sets)}）`
+                      : '还没有记录'}
+                </div>
+              )}
             </div>
           );
         })}
 
-        {planned.length > 0 && (
+        {planned.length > 0 && usable.length === 0 && (
+          <p className="plan-warn">
+            这个训练日的动作<strong>全部</strong>被伤病禁忌挡掉了。先去解除禁忌，或者换个训练日。
+          </p>
+        )}
+        {usable.length === 1 && planned.length > 1 && (
+          <p className="plan-warn">
+            今天只剩 <strong>1</strong> 个动作可练，练下来会缺一大块。建议换个训练日。
+          </p>
+        )}
+
+        {usable.length > 0 && (
           <>
             <button className="btn-primary btn-block plan-start" onClick={start}>
-              开始{day.name}（自动填入建议重量）
+              开始{day.name}（{usable.length} 个动作，自动填入建议重量）
             </button>
             <p className="hint">
               练完结束训练后，会自动轮到这个计划的下一个训练日。

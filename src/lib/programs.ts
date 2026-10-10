@@ -177,19 +177,27 @@ export function planDay(
 
 export const repRangeText = ([lo, hi]: [number, number]) => (lo === hi ? `${lo} 次` : `${lo}~${hi} 次`);
 
-/** 开始训练时把当前计划安排整个抄一份，见 docs/adr/0001 */
+/**
+ * 开始训练时把当前计划安排整个抄一份，见 docs/adr/0001。
+ *
+ * `include` 用来排除这次不打算练的动作（当前是被伤病禁忌挡掉的）。
+ * 快照记的是「这次打算练什么」，不是「计划里写了什么」——后者会让历史里
+ * 凭空多出一堆没打算做的动作，Deviation 也会因此失真。
+ */
 export function buildDaySnapshot(
   program: Program,
   dayIndex: number,
   byId: Map<string, IndexedExercise>,
+  include?: (exerciseId: string) => boolean,
 ): WorkoutDaySnapshot {
   const day = program.days[dayIndex];
+  const items = include ? day.exercises.filter((e) => include(e.exerciseId)) : day.exercises;
   return {
     programId: program.id,
     programName: program.name,
     dayName: day.name,
     dayIndex,
-    exercises: day.exercises.map((item) => ({
+    exercises: items.map((item) => ({
       exerciseId: item.exerciseId,
       nameZh: byId.get(item.exerciseId)?.nameZh ?? item.exerciseId,
       sets: item.sets,

@@ -1,5 +1,6 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { hasLocalMedia, mediaUrl, type Dataset } from '../lib/data';
+import type { ContraindicationStore } from '../lib/useContraindications';
 import type { IndexedExercise } from '../types';
 
 interface Props {
@@ -14,6 +15,7 @@ interface Props {
   inWorkout: boolean;
   /** 是否已有进行中的训练，用于按钮措辞 */
   activeWorkout: boolean;
+  contraStore: ContraindicationStore;
 }
 
 export function DetailPanel({
@@ -26,7 +28,10 @@ export function DetailPanel({
   onAddToWorkout,
   inWorkout,
   activeWorkout,
+  contraStore,
 }: Props) {
+  const [marking, setMarking] = useState(false);
+  const contra = contraStore.get(exercise.id);
   useEffect(() => {
     const onKey = (ev: KeyboardEvent) => {
       if (ev.key === 'Escape') onClose();
@@ -77,6 +82,53 @@ export function DetailPanel({
         >
           {inWorkout ? '✓ 已在今日训练中' : activeWorkout ? '+ 加入今日训练' : '+ 开始训练并加入'}
         </button>
+
+        {contra ? (
+          <div className="contra-marked">
+            <span>
+              已标记为伤病禁忌
+              {contra.until && ` · 预计 ${contra.until.slice(5)} 恢复`}
+              {contra.note && ` · ${contra.note}`}
+            </span>
+            <button className="btn-text" onClick={() => contraStore.unmark(exercise.id)}>
+              解除
+            </button>
+          </div>
+        ) : marking ? (
+          <div className="contra-form">
+            <label className="editor-field">
+              预计恢复
+              <input className="editor-day-focus" type="date" id="contra-until" />
+            </label>
+            <input className="editor-day-focus" id="contra-note" placeholder="备注（例：右肩冈上肌）" />
+            <div className="contra-form-actions">
+              <button
+                className="btn-primary"
+                onClick={() => {
+                  const until = (document.getElementById('contra-until') as HTMLInputElement)?.value;
+                  const note = (document.getElementById('contra-note') as HTMLInputElement)?.value.trim();
+                  contraStore.mark(exercise.id, {
+                    ...(until ? { until } : {}),
+                    ...(note ? { note } : {}),
+                  });
+                  setMarking(false);
+                }}
+              >
+                确认标记
+              </button>
+              <button className="btn-text" onClick={() => setMarking(false)}>
+                取消
+              </button>
+            </div>
+            <p className="hint">
+              到期不会自动解除，只会提醒你确认——否则会在你没注意时把受伤动作塞回计划。
+            </p>
+          </div>
+        ) : (
+          <button className="btn-ghost btn-block" onClick={() => setMarking(true)}>
+            标记为伤病禁忌
+          </button>
+        )}
 
         <dl className="meta">
           <div>

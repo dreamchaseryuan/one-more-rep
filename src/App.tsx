@@ -3,6 +3,7 @@ import { applyFilters, loadDataset, search, type Dataset } from './lib/data';
 import { useFavorites } from './lib/useFavorites';
 import { useWorkouts } from './lib/useWorkouts';
 import { usePrograms } from './lib/usePrograms';
+import { useContraindications } from './lib/useContraindications';
 import {
   EMPTY_FILTERS,
   type Filters,
@@ -31,6 +32,7 @@ export default function App() {
   const { ids: favorites, toggle: toggleFavorite, merge: mergeFavorites } = useFavorites();
   const store = useWorkouts();
   const programStore = usePrograms();
+  const contraStore = useContraindications();
 
   const startProgramDay = (entries: LoggedExercise[], day: WorkoutDaySnapshot) => {
     store.startWithEntries(entries, day);
@@ -165,6 +167,7 @@ export default function App() {
                       exercise={e}
                       dataset={dataset}
                       favorite={favorites.has(e.id)}
+                      blocked={contraStore.blocked(e.id)}
                       onToggleFavorite={toggleFavorite}
                       onOpen={setSelected}
                     />
@@ -184,6 +187,7 @@ export default function App() {
               dataset={dataset}
               store={store}
               programStore={programStore}
+              contraStore={contraStore}
               onOpenExercise={setSelected}
               onStartDay={startProgramDay}
             />
@@ -194,6 +198,7 @@ export default function App() {
               favorites={favorites}
               onMergeFavorites={mergeFavorites}
               programStore={programStore}
+              contraStore={contraStore}
             />
           </>
         )}
@@ -210,6 +215,7 @@ export default function App() {
           onAddToWorkout={store.startWith}
           inWorkout={inWorkout.has(selected.id)}
           activeWorkout={!!store.current}
+          contraStore={contraStore}
         />
       )}
     </div>

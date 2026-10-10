@@ -97,3 +97,19 @@ export interface Workout {
 }
 
 export type Tab = 'library' | 'log';
+
+// ── 伤病禁忌 ─────────────────────────────────────────────────
+
+/**
+ * 使用者给某个 Exercise 打的「这段时间不适合我」标记，通常因为伤病。
+ * 不是删除动作：动作仍在库里、仍能搜到，只是不该出现在计划安排里。
+ */
+export interface Contraindication {
+  exerciseId: string;
+  /** 从哪天开始，YYYY-MM-DD */
+  since: string;
+  /** 预计恢复日。到点**不自动解除**，只提示使用者确认 —— 见 isExpired 的说明 */
+  until?: string;
+  /** "右肩冈上肌" 这类备注 */
+  note?: string;
+}

@@ -2,6 +2,8 @@ import { useRef, useState } from 'react';
 import type { Dataset } from '../lib/data';
 import type { WorkoutStore } from '../lib/useWorkouts';
 import type { ProgramStore } from '../lib/usePrograms';
+import type { ContraindicationStore } from '../lib/useContraindications';
+import { ContraindicationSection } from './ContraindicationSection';
 import { filledSetCount, workoutVolume } from '../lib/useWorkouts';
 import { buildBackup, downloadBackup, parseBackup } from '../lib/backup';
 import { repRangeText } from '../lib/programs';
@@ -18,6 +20,7 @@ interface Props {
   onMergeFavorites: (ids: string[]) => void;
   /** 计划也要进备份 —— 使用者编辑过的计划是不可再生的数据 */
   programStore: ProgramStore;
+  contraStore: ContraindicationStore;
 }
 
 /** 把一组压缩成 "60×8" 这种紧凑写法 */
@@ -32,6 +35,7 @@ export function WorkoutPanel({
   favorites,
   onMergeFavorites,
   programStore,
+  contraStore,
 }: Props) {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [resting, setResting] = useState(false);
@@ -50,6 +54,7 @@ export function WorkoutPanel({
         [...favorites],
         programStore.program?.id ?? null,
         programStore.programs,
+        contraStore.items,
       ),
     );
     setImportMsg(null);
@@ -64,6 +69,7 @@ export function WorkoutPanel({
     const added = store.importWorkouts(backup.workouts);
     onMergeFavorites(backup.favorites);
     const prog = programStore.importPrograms(backup.programs, backup.programId);
+    contraStore.merge(backup.contraindications);
 
     const dup = backup.workouts.length - added;
     setImportMsg(
@@ -74,7 +80,8 @@ export function WorkoutPanel({
         (prog.activated ? '，已切到备份里的当前计划' : '') +
         // v1 备份没有计划字段和训练日快照，历史里那些记录会显示成「自由训练」
         (fromVersion < 2 ? '。这是旧版备份：其中的训练不会关联到计划' : '') +
-        (fromVersion < 3 ? '。旧版备份不含计划定义' : ''),
+        (fromVersion < 3 ? '。旧版备份不含计划定义' : '') +
+        (fromVersion < 4 ? '。旧版备份不含伤病禁忌' : ''),
     );
   };
 
@@ -142,6 +149,9 @@ export function WorkoutPanel({
                 <div className="ex-head">
                   <button className="ex-name" onClick={() => ex && onOpenExercise(ex)}>
                     {nameOf(entry.exerciseId)}
+                    {contraStore.get(entry.exerciseId) && (
+                      <span className="ex-contra-note">伤病禁忌</span>
+                    )}
                   </button>
                   <button
                     className="ex-del"
@@ -306,6 +316,15 @@ export function WorkoutPanel({
           })}
         </section>
       )}
+
+      <ContraindicationSection
+        dataset={dataset}
+        store={contraStore}
+        onOpenExercise={(id) => {
+          const ex = dataset.byId.get(id);
+          if (ex) onOpenExercise(ex);
+        }}
+      />
 
       <section className="backup">
         <h2 className="history-title">数据备份</h2>
