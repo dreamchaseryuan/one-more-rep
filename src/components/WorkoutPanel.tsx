@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import type { Dataset } from '../lib/data';
 import type { WorkoutStore } from '../lib/useWorkouts';
+import type { ProgramStore } from '../lib/usePrograms';
 import { filledSetCount, workoutVolume } from '../lib/useWorkouts';
 import { buildBackup, downloadBackup, parseBackup } from '../lib/backup';
 import { repRangeText } from '../lib/programs';
@@ -15,10 +16,8 @@ interface Props {
   onOpenExercise: (e: IndexedExercise) => void;
   favorites: Set<string>;
   onMergeFavorites: (ids: string[]) => void;
-  /** 当前计划的 id，备份要带上它 */
-  programId: string | null;
-  /** 从备份里恢复出了计划选择时通知外层 */
-  onProgramRestored: (programId: string) => void;
+  /** 计划也要进备份 —— 使用者编辑过的计划是不可再生的数据 */
+  programStore: ProgramStore;
 }
 
 /** 把一组压缩成 "60×8" 这种紧凑写法 */
@@ -32,8 +31,7 @@ export function WorkoutPanel({
   onOpenExercise,
   favorites,
   onMergeFavorites,
-  programId,
-  onProgramRestored,
+  programStore,
 }: Props) {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [resting, setResting] = useState(false);
@@ -46,7 +44,14 @@ export function WorkoutPanel({
   const { current, history } = store;
 
   const handleExport = () => {
-    downloadBackup(buildBackup(store.workouts, [...favorites], programId));
+    downloadBackup(
+      buildBackup(
+        store.workouts,
+        [...favorites],
+        programStore.program?.id ?? null,
+        programStore.programs,
+      ),
+    );
     setImportMsg(null);
   };
 
@@ -58,15 +63,18 @@ export function WorkoutPanel({
     }
     const added = store.importWorkouts(backup.workouts);
     onMergeFavorites(backup.favorites);
-    if (backup.programId) onProgramRestored(backup.programId);
+    const prog = programStore.importPrograms(backup.programs, backup.programId);
 
     const dup = backup.workouts.length - added;
     setImportMsg(
       `导入完成：新增 ${added} 次训练` +
         (dup > 0 ? `，${dup} 条已存在（跳过）` : '') +
         (skipped > 0 ? `，${skipped} 条格式不对（跳过）` : '') +
+        (prog.added > 0 ? `，新增 ${prog.added} 个计划` : '') +
+        (prog.activated ? '，已切到备份里的当前计划' : '') +
         // v1 备份没有计划字段和训练日快照，历史里那些记录会显示成「自由训练」
-        (fromVersion < 2 ? '。这是旧版备份：其中的训练不会关联到计划' : ''),
+        (fromVersion < 2 ? '。这是旧版备份：其中的训练不会关联到计划' : '') +
+        (fromVersion < 3 ? '。旧版备份不含计划定义' : ''),
     );
   };
 

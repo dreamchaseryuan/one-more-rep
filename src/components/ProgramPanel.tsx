@@ -5,12 +5,13 @@ import {
   lastProgramDay,
   nextDayIndex,
   planDay,
-  PROGRAMS,
   repRangeText,
 } from '../lib/programs';
-import type { ProgramStore } from '../lib/useProgram';
+import type { ProgramStore } from '../lib/usePrograms';
 import type { WorkoutStore } from '../lib/useWorkouts';
 import type { IndexedExercise, LoggedExercise, WorkoutDaySnapshot } from '../types';
+import { ProgramList } from './ProgramList';
+import { ProgramEditor } from './ProgramEditor';
 
 interface Props {
   dataset: Dataset;
@@ -24,41 +25,60 @@ const fmtLast = (sets: { weight: string; reps: string }[]) =>
   sets.map((s) => (s.weight ? `${s.weight}×${s.reps}` : `${s.reps}次`)).join('，');
 
 export function ProgramPanel({ dataset, store, programStore, onOpenExercise, onStartDay }: Props) {
-  const { program, select, clear } = programStore;
+  const { program } = programStore;
   const [manual, setManual] = useState<number | null>(null);
+  const [editing, setEditing] = useState(false);
+  const [managing, setManaging] = useState(false);
 
-  // 轮转位置从训练历史推导，不存状态 —— 见 useProgram.ts 的说明
+  // 轮转位置从训练历史推导，不存状态 —— 见 usePrograms.ts 的说明
   const derived = program ? nextDayIndex(program, lastProgramDay(store.workouts, program.id)) : 0;
 
   // 练完一次（派生值随之变化）就丢掉手动选择，回到建议值
   useEffect(() => setManual(null), [derived]);
 
-  if (!program) {
+  // 计划被删光或换了，退出编辑态
+  useEffect(() => {
+    if (!program) {
+      setEditing(false);
+      setManaging(false);
+    }
+  }, [program]);
+
+  if (!program || managing) {
+    return (
+      <ProgramList
+        store={programStore}
+        empty={!program}
+        onClose={() => setManaging(false)}
+      />
+    );
+  }
+
+  if (editing) {
+    return (
+      <ProgramEditor
+        dataset={dataset}
+        program={program}
+        store={programStore}
+        onDone={() => setEditing(false)}
+      />
+    );
+  }
+
+  // 计划可能还没有任何训练日（从空白新建后被删到只剩一天不成立，但防御一下）
+  const dayIndex = Math.min(manual ?? derived, program.days.length - 1);
+  const day = program.days[dayIndex];
+  if (!day) {
     return (
       <section className="program">
-        <h2 className="history-title">选一个训练计划</h2>
-        <p className="hint">
-          计划决定今天练哪些动作、几组、每组几次，并根据上次成绩告诉你该上多少重量。
-          之后可以随时换。
-        </p>
-        <div className="program-cards">
-          {PROGRAMS.map((p) => (
-            <button key={p.id} className="program-card" onClick={() => select(p.id)}>
-              <strong>{p.name}</strong>
-              <span className="program-card-desc">{p.desc}</span>
-              <span className="program-card-meta">
-                {p.days.length} 个训练日 · {p.days.map((d) => d.name).join(' / ')}
-              </span>
-              <span className="program-card-cadence">{p.cadence}</span>
-            </button>
-          ))}
-        </div>
+        <p className="hint">这个计划没有训练日。</p>
+        <button className="btn-primary" onClick={() => setEditing(true)}>
+          去编辑
+        </button>
       </section>
     );
   }
 
-  const dayIndex = manual ?? derived;
-  const day = program.days[dayIndex];
   // 加重建议只看同一计划下的成绩：不同计划的训练意图不同，成绩不可比
   const planned = planDay(day, dataset.byId, (id) => store.lastPerformance(id, program.id));
   const start = () =>
@@ -72,11 +92,14 @@ export function ProgramPanel({ dataset, store, programStore, onOpenExercise, onS
       <header className="program-head">
         <div>
           <h2 className="history-title">{program.name}</h2>
-          <p className="hint">{program.cadence}</p>
+          {program.cadence && <p className="hint">{program.cadence}</p>}
         </div>
         <div className="program-head-actions">
-          <button className="btn-text" onClick={clear}>
-            换计划
+          <button className="btn-text" onClick={() => setEditing(true)}>
+            编辑
+          </button>
+          <button className="btn-text" onClick={() => setManaging(true)}>
+            我的计划
           </button>
         </div>
       </header>
@@ -84,7 +107,7 @@ export function ProgramPanel({ dataset, store, programStore, onOpenExercise, onS
       <div className="day-tabs">
         {program.days.map((d, i) => (
           <button
-            key={d.name}
+            key={`${d.name}-${i}`}
             className={`day-tab ${i === dayIndex ? 'day-tab-on' : ''}`}
             onClick={() => setManual(i)}
           >
@@ -97,8 +120,10 @@ export function ProgramPanel({ dataset, store, programStore, onOpenExercise, onS
       <div className="plan-day">
         <div className="plan-day-head">
           <strong>{day.name}</strong>
-          <span className="hint">{day.focus}</span>
+          {day.focus && <span className="hint">{day.focus}</span>}
         </div>
+
+        {planned.length === 0 && <p className="hint">这个训练日还没有动作。点「编辑」加几个。</p>}
 
         {planned.map((p) => {
           const last = store.lastPerformance(p.exerciseId, program.id);
@@ -110,7 +135,7 @@ export function ProgramPanel({ dataset, store, programStore, onOpenExercise, onS
                   className="plan-ex-name"
                   onClick={() => p.exercise && onOpenExercise(p.exercise)}
                 >
-                  {p.exercise?.nameZh ?? '(动作已下架)'}
+                  {p.exercise?.nameZh ?? '(动作已不在库中)'}
                 </button>
                 <span className="plan-ex-scheme">
                   {p.sets} 组 × {repRangeText(p.repRange)}
@@ -130,15 +155,19 @@ export function ProgramPanel({ dataset, store, programStore, onOpenExercise, onS
           );
         })}
 
-        <button className="btn-primary btn-block plan-start" onClick={start}>
-          开始{day.name}（自动填入建议重量）
-        </button>
-        <p className="hint">
-          练完结束训练后，会自动轮到这个计划的下一个训练日。
-          {store.current && store.current.entries.length > 0 && (
-            <strong> 注意：当前已有进行中的训练，同名动作会被计划里的覆盖。</strong>
-          )}
-        </p>
+        {planned.length > 0 && (
+          <>
+            <button className="btn-primary btn-block plan-start" onClick={start}>
+              开始{day.name}（自动填入建议重量）
+            </button>
+            <p className="hint">
+              练完结束训练后，会自动轮到这个计划的下一个训练日。
+              {store.current && store.current.entries.length > 0 && (
+                <strong> 注意：当前已有进行中的训练，同名动作会被计划里的覆盖。</strong>
+              )}
+            </p>
+          </>
+        )}
       </div>
     </section>
   );

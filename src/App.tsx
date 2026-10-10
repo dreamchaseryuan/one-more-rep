@@ -2,7 +2,7 @@ import { useDeferredValue, useEffect, useMemo, useState } from 'react';
 import { applyFilters, loadDataset, search, type Dataset } from './lib/data';
 import { useFavorites } from './lib/useFavorites';
 import { useWorkouts } from './lib/useWorkouts';
-import { useProgram } from './lib/useProgram';
+import { usePrograms } from './lib/usePrograms';
 import {
   EMPTY_FILTERS,
   type Filters,
@@ -30,7 +30,7 @@ export default function App() {
   const [visible, setVisible] = useState(PAGE_SIZE);
   const { ids: favorites, toggle: toggleFavorite, merge: mergeFavorites } = useFavorites();
   const store = useWorkouts();
-  const programStore = useProgram();
+  const programStore = usePrograms();
 
   const startProgramDay = (entries: LoggedExercise[], day: WorkoutDaySnapshot) => {
     store.startWithEntries(entries, day);
@@ -193,8 +193,7 @@ export default function App() {
               onOpenExercise={setSelected}
               favorites={favorites}
               onMergeFavorites={mergeFavorites}
-              programId={programStore.program?.id ?? null}
-              onProgramRestored={programStore.select}
+              programStore={programStore}
             />
           </>
         )}

@@ -1,4 +1,5 @@
 import type { Workout } from '../types';
+import type { Program } from './programs';
 import { localDate } from './date';
 
 const APP_TAG = 'fitness-app';
@@ -6,10 +7,12 @@ const APP_TAG = 'fitness-app';
 /**
  * 版本历史：
  *   1 — workouts + favorites
- *   2 — 加入 programId；workouts 里出现 day 快照（见 docs/adr/0001）。
- *       Workout 变多了但结构向后兼容，v1 的备份仍能导入。
+ *   2 — 加入 programId；workouts 里出现 day 快照（见 docs/adr/0001）
+ *   3 — 加入 programs（使用者编辑过的计划定义）。
+ *       v2 只存了 programId 不存定义，换设备恢复就会把自定义计划全丢掉。
+ *       三个版本都能导入，缺的字段取空。
  */
-const VERSION = 2;
+const VERSION = 3;
 
 export interface Backup {
   app: typeof APP_TAG;
@@ -17,14 +20,17 @@ export interface Backup {
   exportedAt: string;
   workouts: Workout[];
   favorites: string[];
-  /** 当前跟随的计划。选了哪套计划也是不可再生的使用者数据，v1 漏了它。 */
+  /** 当前跟随的计划 id */
   programId: string | null;
+  /** 使用者拥有的计划定义。不带上它，换台设备你的自定义计划就没了。 */
+  programs: Program[];
 }
 
 export function buildBackup(
   workouts: Workout[],
   favorites: string[],
   programId: string | null,
+  programs: Program[],
 ): Backup {
   return {
     app: APP_TAG,
@@ -33,6 +39,7 @@ export function buildBackup(
     workouts,
     favorites,
     programId,
+    programs,
   };
 }
 
@@ -64,6 +71,22 @@ function isWorkout(v: unknown): v is Workout {
         Array.isArray(en.sets) &&
         en.sets.every((s: unknown) => typeof s === 'object' && s !== null)
       );
+    })
+  );
+}
+
+/** 计划定义来自外部文件，只做够用的形状校验，不逐字段深挖 */
+function isProgram(v: unknown): v is Program {
+  if (typeof v !== 'object' || v === null) return false;
+  const p = v as Record<string, unknown>;
+  return (
+    typeof p.id === 'string' &&
+    typeof p.name === 'string' &&
+    Array.isArray(p.days) &&
+    p.days.every((d: unknown) => {
+      if (typeof d !== 'object' || d === null) return false;
+      const day = d as Record<string, unknown>;
+      return typeof day.name === 'string' && Array.isArray(day.exercises);
     })
   );
 }
@@ -107,6 +130,8 @@ export function parseBackup(text: string): ParseResult {
       favorites: Array.isArray(b.favorites) ? b.favorites.filter((f) => typeof f === 'string') : [],
       // v1 没有这个字段 —— 缺省成「没选计划」，不要去猜
       programId: typeof b.programId === 'string' ? b.programId : null,
+      // v1/v2 都没有计划定义
+      programs: Array.isArray(b.programs) ? b.programs.filter(isProgram) : [],
     },
     error: null,
     skipped: b.workouts.length - good.length,

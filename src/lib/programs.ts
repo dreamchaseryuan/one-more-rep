@@ -17,8 +17,10 @@ export interface ProgramDay {
 export interface Program {
   id: string;
   name: string;
-  desc: string;
-  cadence: string;
+  desc?: string;
+  cadence?: string;
+  /** 派生自哪个 Template。仅作记录 —— 派生之后与模板再无关联，见 docs/adr/0002 */
+  fromTemplate?: string;
   days: ProgramDay[];
 }
 
