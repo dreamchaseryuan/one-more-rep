@@ -21,10 +21,12 @@
 | 项目零测试 | 下面那四个 bug 形状完全相同，却没有任何东西挡着下一个 | 本次 |
 | `date.ts` / README 把时区 bug 讲反了 | 说「晚上 8 点后写成第二天」，实际是**凌晨**写成**前一天** | 本次（加测试时发现） |
 | 每次按键全量落盘 | 手机上一次按键 17 ms（超过一帧），输入发黏；桌面只有 1.5 ms，察觉不到 | 本次 |
+| `mediaUrl` 回退到第三方取图 | 那个「兜底」域名国内基本不通，且永远匹配不上缓存规则 —— 给的不是图，是超时 | 本次 |
+| 媒体清单缺失会让**整个应用**打不开 | `.catch()` 只兜住 fetch 没兜住 `.json()`；SPA fallback 返回 HTML+200 → 应用显示「数据加载失败」，把人引去查动作数据 | 本次（删兜底时发现） |
 
 ## 测试（已完成）
 
-`npm test` 跑 57 个用例，全是纯函数，约 300ms。挂在 CI 的 `npm run build` 之前，
+`npm test` 跑 70 个用例，全是纯函数，约 300ms。挂在 CI 的 `npm run build` 之前，
 且在拉媒体之前（测试几百毫秒，媒体 130 MB，顺序反了会白拉一遍才失败）。
 
 覆盖的是**已经踩过的那几个 bug**，不是泛泛的「提高质量」——它们形状完全一样：
@@ -37,6 +39,8 @@
 | `programs.test.ts` | 轮转按**名字**推导、递增组的算术与几个不变量 |
 | `id.test.ts` | 非安全上下文下 id 不抛异常、形状仍是合法 v4 |
 | `backup.test.ts` | 坏输入不污染好数据、v1→v4 四个版本都能读进来 |
+| `usePersist.test.ts` | 合并多次改动、flush 后不重复写、无待写内容时 flush 是空操作 |
+| `data.test.ts` | `mediaUrl` **任何情况下都不返回外部地址** |
 
 **一处必须知道的机关**：`vitest.config.ts` 顶层把 `process.env.TZ` 钉成 `Asia/Shanghai`。
 不钉的话 CI 跑在 UTC 上，`toISOString()` 恰好等于本地日期，时区用例会**假通过**——
@@ -46,40 +50,31 @@
 
 ## 值得做
 
-### 1. 删掉 CDN 兜底
-
-`data.ts` 的 `mediaUrl()` 在本地缺图时回退到
-`https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/...`。两个问题：
-
-1. 注释写的是「保证任何情况下都有图」，但**这个域名在国内基本不通**，实际做不到
-2. 该 URL 不含 `/media/` 路径段，**不匹配 workbox 的 `runtimeCaching` 规则，永远不会被缓存**
-
-预缓存修好之后这条路径几乎不会走到，但留着它就是一个「看起来是兜底、实际是陷阱」的分支。
-建议删掉回退，本地没有就显示占位并标注「本机未下载」。
+（暂无。）
 
 ## 可以做
 
-### 2. 加重建议的三个查询建索引
+### 1. 加重建议的三个查询建索引
 
 `lastPerformance` / `bestSet` / `weightHistory` 都是 O(历史条数)，且会在 `WorkoutPanel` 里**按动作各调一遍**。
 按 `history` 变化一次性建 `Map<exerciseId, ...>`。数据量大了才明显。
 
-### 3. `BASE` 改成环境变量
+### 2. `BASE` 改成环境变量
 
 `vite.config.ts` 写死 `/fitness-app/`，仓库改名就全站 404。
 改 `process.env.BASE_PATH ?? '/fitness-app/'`，CI 里传。
 
-### 4. CI 不拉 GIF
+### 3. CI 不拉 GIF
 
 `deploy.yml` 里的 `media:fetch-videos` 会拉 122 MB，`dist` 因此是 140 MB。
 GIF 是可选依赖（README「已知取舍」里写了），去掉这一步产物降到 18 MB 左右，
 部署和移动端首次加载都受益。代价：线上详情页只有静态图。
 
-### 5. 监听 `storage` 事件
+### 4. 监听 `storage` 事件
 
 两个标签页同时开着会互相覆盖（后写的赢）。个人自用影响小，优先级低。
 
-### 6. 升级 CI 里的 action 大版本
+### 5. 升级 CI 里的 action 大版本
 
 构建时有告警：`actions/checkout@v4` 等被强制跑在 Node 24 上。不影响功能。
 

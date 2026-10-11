@@ -67,7 +67,7 @@ scripts/
   make-icons.mjs             生成 PWA 图标（手写 PNG 编码）
   lib/proxy-bootstrap.mjs    让 Node 的 fetch 读 HTTP_PROXY（见上文「代理」）
 src/
-  lib/data.ts                加载 / 搜索 / 筛选 / 媒体回退
+  lib/data.ts                加载 / 搜索 / 筛选 / 媒体清单与路径（查不到返回 null，没有兜底）
   lib/useFavorites.ts        收藏夹（localStorage）
   lib/useWorkouts.ts         训练记录：增删动作与组、上次成绩、进步曲线
   lib/usePrograms.ts         归你所有的计划 + 当前跟随哪一套（localStorage）
@@ -364,8 +364,10 @@ gh api -X POST repos/<用户>/fitness-app/pages -f build_type=workflow
 
 ## 已知取舍
 
-- **媒体文件是可选依赖**。缩略图 8.5 MB，GIF 122 MB。两者都不在版本库里（见 `.gitignore`），
-  缺了就用上游 URL 兜底，不会渲染成破图。没下 GIF 时详情页显示静态图并标注「动画需下载 GIF」。
+- **媒体文件是可选依赖**。缩略图 8.5 MB，GIF 122 MB。两者都不在版本库里（见 `.gitignore`）。
+  没有媒体时应用**照常能用**，只是图的位置显示「无图」。不再回退到第三方取图——
+  那份媒体的授权只随本应用走，而且原来的兜底域名（`raw.githubusercontent.com`）国内基本不通，
+  它给的不是图，是超时。没下 GIF 时详情页显示静态图并标注「动画需下载 GIF」。
 - **部分中文名仍偏机械**，如「辅助坐姿胸肌大肌拉伸稳定球」。这是上游翻译的底子，
   遇到读着别扭的，在 `data/name-overrides.json` 里加一条 `"动作id": "改好的名字"` 再跑 `data:build`。
 - **列表一次渲染 48 个**，其余按需加载。1324 个动作一次性挂载会明显卡顿。
