@@ -25,14 +25,22 @@ permissions:
   pages: write
   id-token: write
 
-# 连着推两次时，让后一次等前一次结束，别互相覆盖部署
-concurrency:
-  group: pages
-  cancel-in-progress: false
+# 不在这里设 workflow 级 concurrency。
+#
+# 设成 `group: pages, cancel-in-progress: false`（GitHub 官方 Pages 模板的写法）时，
+# 后一次推送会**整个排队等**前一次跑完 —— 前一次照样把 130 MB 媒体拉完、构建完，
+# 结果注定被覆盖。连推三次就是三次完整构建，白下 260 MB。
+#
+# 改成按 job 分开控制：**构建可以掐，部署不能掐**。
+# 取消一个正在进行的构建没有任何后果（它的产物本来就会被后一次盖掉），
+# 而取消一个正在进行的部署会留下不一致的环境 —— 这正是官方模板写 false 的原因。
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    concurrency:
+      group: pages-build
+      cancel-in-progress: true # 后一次推上来，前一次还在跑的构建直接取消
     steps:
       - uses: actions/checkout@v4
 
@@ -68,6 +76,11 @@ jobs:
   deploy:
     needs: build
     runs-on: ubuntu-latest
+    # 部署串行、且**绝不中途取消** —— 这是官方 Pages 模板那条 `cancel-in-progress: false`
+    # 真正想保护的东西，只是它写在了 workflow 级、连构建一起保护了。
+    concurrency:
+      group: pages
+      cancel-in-progress: false
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
