@@ -2,13 +2,13 @@
   /* 炭灰色阶，不是纯黑。原先 --bg 是 #0d0f12（亮度 13/255），几乎是纯黑 ——
      在手机 OLED 上夜里看着发死，而且纯黑是「AI 默认深色主题」最典型的特征。
      整体提亮 14 级，各层之间的明度差保持不变，所以层次关系没动。 */
-  --bg: #1b1e23;
-  --surface: #23272d;
-  --surface-2: #2b3038;
+  --bg: #0f1620;
+  --surface: #18222e;
+  --surface-2: #212d3b;
 
   /* 边框两档。原先 #262b34 / #3a4150 / #3d4553 三个，后两个几乎一模一样，合并。 */
-  --border: #363c46;
-  --border-strong: #4b5361;
+  --border: #28374a;
+  --border-strong: #3d5170;
 
   /* 文字四档。原先有七个灰度在抢三四个角色 —— #9aa1ad 和 #8b929e 是同一档，
      #5f6673 和 #6b7280 也是。按亮度取最近的一档并过来。 */
@@ -20,10 +20,22 @@
      仍然比 --dim 弱，层级关系不变。 */
   --text-4: #7f8694;
 
-  --accent: #f97316;
-  --accent-soft: rgba(249, 115, 22, 0.14);
+  --accent: #3b82f6;
+  --accent-soft: rgba(59, 130, 246, 0.16);
   /* 橙底上的文字色。写死了三处，其实只有这一个用途 */
   --on-accent: #0d0f12;
+
+  /* 收藏星的金色。和主色蓝是两个不同的语义：蓝=可操作，金=已收藏。 */
+  --favorite: #fbbf24;
+
+  /* 主色当作「文字」用时要浅一档。--accent 在深底上只有约 4:1，当色块填充够用，
+     当文字不够（WCAG AA 正文要 4.5）。这个值在 --surface 上有 6.5:1。 */
+  --accent-ink: #6aa5f5;
+
+  /* 警告色，给「伤病禁忌」用。**不能共用 --accent** —— 蓝色表示「可操作」，
+     禁忌表示「警告」，两种语义必须用两种颜色，否则打上禁忌的动作看起来和
+     普通可点的东西没区别。 */
+  --warn: #f59e0b;
 
   /* 语义色。原先是直接写死的十六进制 */
   --ok: #4ade80;
@@ -69,7 +81,14 @@
 html,
 body {
   margin: 0;
-  background: var(--bg);
+  /* 两团很淡的蓝光。原先是一块死平的底色，整屏看下来没有纵深 ——
+     光晕让上半屏有一点「从右上照下来」的感觉，但强度压得很低，免得跟卡片抢注意力。 */
+  background:
+    radial-gradient(1200px 680px at 76% -10%, rgba(59, 130, 246, 0.30), transparent 64%),
+    radial-gradient(900px 600px at 6% 18%, rgba(56, 189, 248, 0.13), transparent 68%),
+    radial-gradient(700px 900px at 50% 110%, rgba(37, 99, 235, 0.12), transparent 70%),
+    var(--bg);
+  background-attachment: fixed;
   color: var(--text);
   font-family: system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', sans-serif;
   -webkit-font-smoothing: antialiased;
@@ -90,7 +109,7 @@ button {
   align-items: center;
   gap: 12px;
   padding: 12px 24px;
-  background: rgba(27, 30, 35, 0.86);
+  background: rgba(15, 22, 32, 0.82);
   backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--border);
 }
@@ -168,7 +187,8 @@ button {
   flex-direction: column;
   gap: 12px;
   padding: 16px;
-  background: var(--surface);
+  background: linear-gradient(180deg, rgba(59, 130, 246, 0.07), rgba(59, 130, 246, 0)),
+    var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--r-lg);
 }
@@ -237,9 +257,13 @@ button {
 }
 
 .filter-title {
-  padding-top: 4px;
-  font-size: var(--fs-base);
-  color: var(--dim);
+  align-self: flex-start;
+  margin-top: 4px;
+  padding: 2px 10px;
+  border-radius: var(--r-full);
+  background: rgba(59, 130, 246, 0.16);
+  font-size: var(--fs-sm);
+  color: var(--accent-ink);
 }
 
 .filter-dim {
@@ -259,8 +283,8 @@ button {
   align-items: center;
   gap: 4px;
   padding: 4px 12px;
-  background: var(--surface-2);
-  border: 1px solid transparent;
+  background: rgba(59, 130, 246, 0.06);
+  border: 1px solid rgba(59, 130, 246, 0.18);
   border-radius: var(--r-full);
   font-size: var(--fs-base);
   color: var(--text-2);
@@ -272,9 +296,9 @@ button {
 }
 
 .chip-on {
-  background: var(--accent-soft);
+  background: rgba(59, 130, 246, 0.30);
   border-color: var(--accent);
-  color: var(--accent);
+  color: var(--accent-ink);
 }
 
 .chip-count {
@@ -319,8 +343,11 @@ button {
 .card {
   display: flex;
   flex-direction: column;
-  background: var(--surface);
-  border: 1px solid var(--border);
+  /* 顶部一层极淡的蓝纱 + 蓝色描边：卡片在深蓝底上不是「一块更亮的灰」，
+     而是「一块被蓝光照到的面」。描边透明度压到 0.16，只在边缘提示存在感。 */
+  background: linear-gradient(160deg, rgba(59, 130, 246, 0.07), rgba(59, 130, 246, 0) 46%),
+    var(--surface);
+  border: 1px solid rgba(59, 130, 246, 0.16);
   border-radius: var(--r-lg);
   overflow: hidden;
   cursor: pointer;
@@ -328,9 +355,9 @@ button {
 }
 
 .card:hover {
-  border-color: var(--border-strong);
+  border-color: rgba(59, 130, 246, 0.48);
   transform: translateY(-2px);
-  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.22), 0 12px 32px rgba(59, 130, 246, 0.14);
 }
 
 /*
@@ -394,7 +421,7 @@ button {
 }
 
 .fav-on {
-  color: var(--accent);
+  color: var(--favorite);
 }
 
 .fav-lg {
@@ -447,14 +474,16 @@ button {
 .tag {
   padding: 2px 8px;
   border-radius: var(--r-sm);
-  background: var(--surface-2);
+  background: rgba(59, 130, 246, 0.12);
   font-size: var(--fs-xs);
-  color: var(--dim);
+  color: var(--text-2);
 }
 
+/* 目标肌比器械重要一档，所以底更实、字更亮。两个都是蓝的，但深浅拉开，
+   扫一眼就知道哪个是主要信息。 */
 .tag-target {
-  background: var(--accent-soft);
-  color: var(--accent);
+  background: rgba(59, 130, 246, 0.26);
+  color: var(--accent-ink);
 }
 
 .btn-more {
@@ -1812,14 +1841,14 @@ button {
   gap: 4px;
   padding: 12px 12px;
   margin-bottom: 16px;
-  background: rgba(249, 115, 22, 0.1);
-  border: 1px solid rgba(249, 115, 22, 0.4);
+  background: rgba(59, 130, 246, 0.1);
+  border: 1px solid rgba(59, 130, 246, 0.4);
   border-radius: var(--r-md);
 }
 
 .contra-expired strong {
   font-size: var(--fs-base);
-  color: var(--accent);
+  color: var(--warn);
 }
 
 .contra-expired .hint {
@@ -1901,7 +1930,7 @@ button {
 }
 
 .contra-note:focus {
-  border-color: var(--accent);
+  border-color: var(--warn);
 }
 
 .contra-list {
@@ -1921,7 +1950,7 @@ button {
 }
 
 .contra-item-over {
-  border-color: rgba(249, 115, 22, 0.45);
+  border-color: rgba(59, 130, 246, 0.45);
 }
 
 .contra-item-name {
@@ -1934,7 +1963,7 @@ button {
 }
 
 .contra-item-name:hover {
-  color: var(--accent);
+  color: var(--warn);
 }
 
 .contra-item-dates {
@@ -1948,7 +1977,7 @@ button {
   padding: 2px 8px;
   border-radius: var(--r-sm);
   background: var(--accent-soft);
-  color: var(--accent);
+  color: var(--warn);
   font-size: var(--fs-xs);
   font-style: normal;
 }
@@ -1982,7 +2011,7 @@ button {
   background: var(--accent-soft);
   border-radius: var(--r-md);
   font-size: var(--fs-base);
-  color: var(--accent);
+  color: var(--warn);
 }
 
 .contra-form {
@@ -2016,7 +2045,7 @@ button {
   left: 6px;
   padding: 2px 8px;
   border-radius: var(--r-sm);
-  background: rgba(249, 115, 22, 0.9);
+  background: rgba(245, 158, 11, 0.9);
   color: var(--on-accent);
   font-size: var(--fs-xs);
   font-weight: 600;
@@ -2027,7 +2056,7 @@ button {
   padding: 2px 8px;
   border-radius: var(--r-sm);
   background: var(--accent-soft);
-  color: var(--accent);
+  color: var(--warn);
   font-size: var(--fs-xs);
   font-weight: 400;
   vertical-align: 1px;
@@ -2050,8 +2079,8 @@ button {
   margin-left: auto;
   padding: 2px 8px;
   border-radius: var(--r-sm);
-  background: rgba(249, 115, 22, 0.14);
-  color: var(--accent);
+  background: rgba(245, 158, 11, 0.14);
+  color: var(--warn);
   font-size: var(--fs-sm);
 }
 
