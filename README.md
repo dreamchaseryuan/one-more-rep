@@ -1,6 +1,17 @@
 # 动作库 · 健身助手
 
-1324 个健身动作的中文检索 + 训练记录。纯前端、无后端、无账号，数据全在本地。
+**在线使用：<https://yuan-20022.github.io/fitness-app/>**
+
+手机上打开后选「添加到主屏幕」，它就是一个独立 App —— 有自己的图标、全屏打开、**没网也能用**
+（首次加载需要联网缓存，之后不用）。不需要装任何东西，也没有账号。
+
+1324 个健身动作的中文检索 + 训练计划 + 训练记录。纯前端、无后端、无账号，数据全在本地。
+
+<p align="center">
+  <img src="docs/screenshots/library.png" width="250" alt="搜索动作：中文名、英文原名、目标肌与器械">
+  <img src="docs/screenshots/detail.png" width="250" alt="动作详情：动画演示、属性与中文分步说明">
+  <img src="docs/screenshots/workout.png" width="250" alt="训练记录：组数重量、打勾与组间休息计时">
+</p>
 
 解决的实际问题：
 
@@ -9,6 +20,10 @@
 - **记训练**：记组数重量次数，下次练同一动作**自动带出上次的数据**，方便判断该不该加重量
 
 ## 快速开始
+
+**只是想用**：直接打开 <https://yuan-20022.github.io/fitness-app/> 就行，下面这些都不用做。
+
+**想自己跑一份**：
 
 ```bash
 npm install
@@ -287,14 +302,23 @@ ID 稳定。`npm run check:programs`（已挂进 `build`）校验模板里每个
 
 搜索能同时命中中文名、英文原名、目标肌、器械、部位、协同肌，多词用空格分隔是 AND 关系。
 
-## 媒体与授权
+## 许可
 
-- 代码与数据：**MIT**（© Hasan Emir Yıldırım）
-- 演示图片与 GIF：**© Gym visual — https://gymvisual.com/**，以 180×180 分辨率授权转载，**必须保留署名**。
-  界面上每个动作详情页底部都会显示该署名，不要去掉。
-- 详见 `data/NOTICE.md` 与 `data/LICENSE`。
+| 部分 | 许可 |
+|---|---|
+| 应用代码、数据管道、中文名与清洗 | **MIT** —— 见 [LICENSE](LICENSE) |
+| 上游动作数据集 | **MIT**，© Hasan Emir Yıldırım —— 见 [data/LICENSE](data/LICENSE) |
+| 动作演示图片与 GIF | **© Gym visual — https://gymvisual.com/**，**不在本仓库、也不在 MIT 范围内** |
 
-仅供个人使用。若要商业化，需先查阅 Gym visual 的使用条款，或换用
+**媒体**（缩略图与 GIF）以 180×180 分辨率使用，**必须保留署名** —— 界面上每个动作详情页
+底部都会显示那行署名，不要去掉。媒体不进版本库（见 `.gitignore`），由 CI 在构建时从上游拉取，
+所以克隆这个仓库不会连带拿到那些图。
+
+**克隆本仓库不等于拿到媒体的许可。** 想在自己的项目里用这套媒体，先读
+[Gym visual 的使用条款](https://gymvisual.com/content/3-terms-and-conditions-of-use)并自行取得授权。
+详见 [data/NOTICE.md](data/NOTICE.md)。
+
+本项目面向个人自用。若要商业化，需先处理上面那条媒体授权，或换用
 [free-exercise-db](https://github.com/yuhonas/free-exercise-db)（Unlicense 公共领域）。
 
 ## 部署（手机上用）
