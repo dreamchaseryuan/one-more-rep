@@ -11,4 +11,4 @@ public/media/index.json
 data/exercises.json
 
 # 验证用截图
-screenshot-*.png
+screenshot-*.*
