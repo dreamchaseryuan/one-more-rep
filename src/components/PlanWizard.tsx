@@ -26,6 +26,7 @@ const MINUTES = [40, 60, 90];
 const GOALS: { value: Goal; label: string }[] = [
   { value: 'muscle', label: '增肌为主' },
   { value: 'strength', label: '力量为主' },
+  { value: 'tone', label: '塑形 / 减脂为主' },
 ];
 
 export function PlanWizard({ onCancel, onCreate }: Props) {
@@ -53,8 +54,9 @@ export function PlanWizard({ onCancel, onCreate }: Props) {
       </header>
 
       <p className="hint">
-        这里<strong>不会</strong>替你编一套计划。它只做三件事：从已有的模板里挑一个、
-        按你能练的天数和时长裁掉多余的、按目标调次数区间。每一处改动都会列在下面 ——
+        这里<strong>不会</strong>替你编一套计划。它只做四件事：从已有的模板里挑一个、
+        按你能练的天数和时长裁掉多余的、按目标调次数区间，以及选了「塑形 / 减脂」时
+        在训练日末尾挂一个自重有氧收尾。每一处改动都会列在下面 ——
         创建之后在编辑器里随时能改回去。
       </p>
 

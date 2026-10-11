@@ -1,5 +1,10 @@
 {
-  "_comment": "内置训练模板。exerciseId 对应 public/data/exercises.json，warmup 引用 data/warmups.json 的方案名。改完跑 npm run check:programs 校验。repRange 是 [下限, 上限]，次数做到上限就该加重量。模板是只读起点，使用者选用后复制成归自己的一份（见 docs/adr/0002）。",
+  "_comment": "内置训练模板。exerciseId 对应 public/data/exercises.json，warmup 引用 data/warmups.json 的方案名。改完跑 npm run check:programs 校验。repRange 是 [下限, 上限]，次数做到上限就该加重量。模板是只读起点，使用者选用后复制成归自己的一份（见 docs/adr/0002）。cardioFinishers 是「塑形 / 减脂」目标挂在训练日末尾的自重有氧，每个经验档一个，也由 check:programs 校验。",
+  "cardioFinishers": [
+    { "experience": "new", "exerciseId": "3224", "why": "开合跳，零基础最容易上手" },
+    { "experience": "half", "exerciseId": "0630", "why": "登山者，有基础之后换强度高一档的" },
+    { "experience": "year", "exerciseId": "1160", "why": "波比跳，全身发力，强度最大" }
+  ],
   "programs": [
     {
       "id": "ppl",

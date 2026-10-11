@@ -87,6 +87,26 @@ export const PROGRAMS: Program[] = (rawPrograms as unknown as { programs: RawPro
 export const getProgram = (id: string): Program | undefined => PROGRAMS.find((p) => p.id === id);
 
 /**
+ * 「塑形 / 减脂」目标下挂在训练日末尾的自重有氧，按训练经验由易到难。
+ *
+ * 放在 data/programs.json 里而不是写死在 recommend.ts 里，是为了让动作 id 走**和模板
+ * 完全相同的校验**：`scripts/check-programs.mjs` 会核对每个 id 真实存在、
+ * 且确实是「有氧 + 自重」。写死进 TS 的话，改错一个 id 的后果是计划里静默多出
+ * 一个「(动作已不在库中)」，不报错、不崩溃 —— 和模板 id 写错是同一个坑。
+ *
+ * **自重这条是硬要求**：库里 29 个有氧动作里 21 个是自重的。换成跑步机 / 椭圆机
+ * 就得先知道使用者健身房有没有那台机器，猜错比不给更糟。
+ */
+export interface CardioFinisher {
+  experience: string;
+  exerciseId: string;
+  why: string;
+}
+
+export const CARDIO_FINISHERS: CardioFinisher[] =
+  (rawPrograms as unknown as { cardioFinishers?: CardioFinisher[] }).cardioFinishers ?? [];
+
+/**
  * 加重幅度按器械定 —— 这是现实约束，不是偏好：
  * 杠铃最小片两片共 2.5kg，哑铃通常 2kg 一档，壶铃 4kg 一档。
  * 自主动作加不了重量，只能加次数。

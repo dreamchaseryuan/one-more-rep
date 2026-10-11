@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { PROGRAMS } from './programs';
+import { CARDIO_FINISHERS, PROGRAMS } from './programs';
 import { recommend, type Experience, type Goal, type Profile } from './recommend';
 
 const profile = (p: Partial<Profile> = {}): Profile => ({
@@ -122,12 +122,88 @@ describe('recommend —— 按目标调次数区间', () => {
   it('任何情况下都会给出一条 range 说明 —— 使用者要知道次数区间动没动', () => {
     expect(noteKinds(recommend(profile({ goal: 'strength' })))).toContain('range');
     expect(noteKinds(recommend(profile({ goal: 'muscle' })))).toContain('range');
+    expect(noteKinds(recommend(profile({ goal: 'tone' })))).toContain('range');
+  });
+});
+
+describe('recommend —— 塑形 / 减脂：次数上移 + 有氧收尾', () => {
+  const TONE_RANGES = [
+    [10, 12],
+    [15, 20],
+  ];
+
+  it('每个动作的次数区间都落在这两档里，没有漏网的', () => {
+    for (const experience of ['new', 'half', 'year'] as Experience[]) {
+      const r = recommend(profile({ goal: 'tone', experience, daysPerWeek: 3, minutes: 90 }));
+      for (const d of r.days) {
+        for (const e of d.exercises) {
+          expect(TONE_RANGES, `动作 ${e.exerciseId} 的区间 ${e.repRange}`).toContainEqual(e.repRange);
+        }
+      }
+    }
+  });
+
+  it('分档看的是模板自己的上限，不是「第一个动作就是复合动作」', () => {
+    const full = PROGRAMS.find((p) => p.id === 'ppl')!;
+    const r = recommend(profile({ goal: 'tone', daysPerWeek: 3, minutes: 90 }));
+
+    r.days.forEach((d, i) => {
+      const original = full.days[i].exercises;
+      // 前 original.length 个是模板原班动作，最后一个是后加的有氧
+      d.exercises.slice(0, original.length).forEach((e, j) => {
+        const [lo, hi] = original[j].repRange;
+        expect(e.exerciseId).toBe(original[j].exerciseId);
+        expect(e.repRange).toEqual(hi <= 8 ? [10, 12] : [15, 20]);
+        // 顺带钉死：区间是「上移」，不是原样保留
+        expect(e.repRange[1]).toBeGreaterThanOrEqual(hi);
+        expect(lo).toBeLessThanOrEqual(e.repRange[0]);
+      });
+    });
+  });
+
+  it('每个训练日末尾挂的就是名单里那一个，三个经验档各挑各的', () => {
+    // 名单里的 id 是否真实存在、是不是「有氧 + 自重」，由 check:programs 校验
+    // （和模板 id 走同一套）。这里只管推荐器有没有正确地把它们用起来。
+    expect(CARDIO_FINISHERS).toHaveLength(3);
+    expect(new Set(CARDIO_FINISHERS.map((f) => f.exerciseId)).size).toBe(3);
+
+    for (const experience of ['new', 'half', 'year'] as Experience[]) {
+      const f = CARDIO_FINISHERS.find((x) => x.experience === experience);
+      expect(f, `名单里缺「${experience}」这一档`).toBeTruthy();
+
+      const r = recommend(profile({ goal: 'tone', experience, daysPerWeek: 3, minutes: 90 }));
+      for (const d of r.days) {
+        expect(d.exercises[d.exercises.length - 1].exerciseId).toBe(f!.exerciseId);
+      }
+    }
+  });
+
+  it('有氧是加在裁动作之后的，不占「每次能练多久」的名额', () => {
+    const r = recommend(profile({ goal: 'tone', daysPerWeek: 3, minutes: 40 }));
+    // 40 分钟 → 模板动作裁到 4 个，再加 1 个有氧
+    for (const d of r.days) expect(d.exercises.length).toBe(5);
+  });
+
+  it('增肌和力量没有有氧收尾 —— 只有塑形/减脂才有', () => {
+    for (const goal of ['muscle', 'strength'] as Goal[]) {
+      const r = recommend(profile({ goal, daysPerWeek: 3, minutes: 90 }));
+      const full = PROGRAMS.find((p) => p.id === r.templateId)!;
+      for (const [i, d] of r.days.entries()) {
+        expect(d.exercises.length).toBe(full.days[i].exercises.length);
+      }
+    }
+  });
+
+  it('明说「这仍然是一份力量计划」，不让人以为拿到的是减脂课表', () => {
+    const r = recommend(profile({ goal: 'tone' }));
+    const warn = r.notes.find((n) => n.kind === 'warn');
+    expect(warn?.text).toContain('仍然是一份力量计划');
   });
 });
 
 describe('recommend —— 每种组合都给出能用的结果', () => {
   const experiences: Experience[] = ['new', 'half', 'year'];
-  const goals: Goal[] = ['muscle', 'strength'];
+  const goals: Goal[] = ['muscle', 'strength', 'tone'];
 
   it('所有输入组合都不抛异常，且结果自洽', () => {
     for (const experience of experiences) {
@@ -156,11 +232,14 @@ describe('recommend —— 每种组合都给出能用的结果', () => {
     }
   });
 
-  it('结果里不改动作本身 —— 只挑模板、裁数量、调次数，不动「练哪些动作」', () => {
-    const r = recommend(profile({ daysPerWeek: 3, minutes: 90 }));
-    const full = PROGRAMS.find((p) => p.id === 'ppl')!;
-    expect(r.days.map((d) => d.exercises.map((e) => e.exerciseId))).toEqual(
-      full.days.map((d) => d.exercises.map((e) => e.exerciseId)),
-    );
+  it('增肌/力量不改动作本身 —— 只挑模板、裁数量、调次数，不动「练哪些动作」', () => {
+    // 塑形/减脂是这条规矩的**唯一例外**（末尾加一个自重有氧），单独在上面一组测试里守着
+    for (const goal of ['muscle', 'strength'] as Goal[]) {
+      const r = recommend(profile({ goal, daysPerWeek: 3, minutes: 90 }));
+      const full = PROGRAMS.find((p) => p.id === 'ppl')!;
+      expect(r.days.map((d) => d.exercises.map((e) => e.exerciseId))).toEqual(
+        full.days.map((d) => d.exercises.map((e) => e.exerciseId)),
+      );
+    }
   });
 });

@@ -4,7 +4,7 @@
 import { readFileSync } from 'node:fs';
 
 const [progPath, warmPath, exPath] = process.argv.slice(2);
-const { programs } = JSON.parse(readFileSync(progPath, 'utf8'));
+const { programs, cardioFinishers } = JSON.parse(readFileSync(progPath, 'utf8'));
 const { profiles } = JSON.parse(readFileSync(warmPath, 'utf8'));
 const exercises = JSON.parse(readFileSync(exPath, 'utf8'));
 const byId = new Map(exercises.map((e) => [e.id, e]));
@@ -16,6 +16,41 @@ const seenProgramIds = new Set();
 let dayCount = 0;
 let exCount = 0;
 let warmItemCount = 0;
+let finisherCount = 0;
+
+// ── 塑形/减脂的有氧收尾名单 ──────────────────────────────────
+// 和模板 id 是同一个失败模式：id 写错时，计划里不会报错、不会崩，
+// 只是静默多出一个「(动作已不在库中)」。所以按同一套标准校验。
+const EXPERIENCES = ['new', 'half', 'year'];
+const finisherSeen = new Set();
+
+for (const f of cardioFinishers ?? []) {
+  const where = `有氧收尾「${f.experience}」`;
+  if (!EXPERIENCES.includes(f.experience)) {
+    errors.push(`${where}: experience 只能是 ${EXPERIENCES.join(' / ')}`);
+  }
+  if (finisherSeen.has(f.experience)) errors.push(`${where}: 经验档重复`);
+  finisherSeen.add(f.experience);
+  // why 会原样出现在界面上的说明文字里（「开合跳，零基础最容易上手，3 组 × …」）
+  if (!f.why) errors.push(`${where}: 缺 why —— 界面文案直接用它，缺了会显示成空白`);
+
+  const ex = byId.get(f.exerciseId);
+  if (!ex) {
+    errors.push(`${where}: 引用的动作 id=${f.exerciseId} 不存在`);
+    continue;
+  }
+  if (ex.bodyPartZh !== '有氧') {
+    errors.push(`${where}: ${ex.nameZh} 不是有氧动作（bodyPartZh=${ex.bodyPartZh}）`);
+  }
+  // 自重是硬要求：挑器械有氧就得先知道使用者健身房有没有那台机器，猜错比不给更糟
+  if (ex.equipmentZh !== '自重') {
+    errors.push(`${where}: ${ex.nameZh} 需要器械（${ex.equipmentZh}），有氧收尾必须挑自重的`);
+  }
+  finisherCount++;
+}
+for (const e of EXPERIENCES) {
+  if (!finisherSeen.has(e)) errors.push(`有氧收尾：缺「${e}」这一档（塑形/减脂目标会静默少一段）`);
+}
 
 // ── 热身方案本身 ─────────────────────────────────────────────
 for (const [key, profile] of Object.entries(profiles)) {
@@ -124,7 +159,8 @@ for (const p of programs) {
 
 console.log(
   `校验 ${programs.length} 个模板、${dayCount} 个训练日、${exCount} 条动作安排、` +
-    `${Object.keys(profiles).length} 个热身方案（${warmItemCount} 个条目）`,
+    `${Object.keys(profiles).length} 个热身方案（${warmItemCount} 个条目）、` +
+    `${finisherCount} 个有氧收尾`,
 );
 
 if (warnings.length) {
