@@ -2,13 +2,13 @@
   /* 炭灰色阶，不是纯黑。原先 --bg 是 #0d0f12（亮度 13/255），几乎是纯黑 ——
      在手机 OLED 上夜里看着发死，而且纯黑是「AI 默认深色主题」最典型的特征。
      整体提亮 14 级，各层之间的明度差保持不变，所以层次关系没动。 */
-  --bg: #0f1620;
-  --surface: #18222e;
-  --surface-2: #212d3b;
+  --bg: #12161d;
+  --surface: #1a1f27;
+  --surface-2: #232830;
 
   /* 边框两档。原先 #262b34 / #3a4150 / #3d4553 三个，后两个几乎一模一样，合并。 */
-  --border: #28374a;
-  --border-strong: #3d5170;
+  --border: #2b313a;
+  --border-strong: #3f4650;
 
   /* 文字四档。原先有七个灰度在抢三四个角色 —— #9aa1ad 和 #8b929e 是同一档，
      #5f6673 和 #6b7280 也是。按亮度取最近的一档并过来。 */
@@ -84,9 +84,8 @@ body {
   /* 两团很淡的蓝光。原先是一块死平的底色，整屏看下来没有纵深 ——
      光晕让上半屏有一点「从右上照下来」的感觉，但强度压得很低，免得跟卡片抢注意力。 */
   background:
-    radial-gradient(1200px 680px at 76% -10%, rgba(59, 130, 246, 0.30), transparent 64%),
-    radial-gradient(900px 600px at 6% 18%, rgba(56, 189, 248, 0.13), transparent 68%),
-    radial-gradient(700px 900px at 50% 110%, rgba(37, 99, 235, 0.12), transparent 70%),
+    radial-gradient(1200px 680px at 76% -10%, rgba(59, 130, 246, 0.15), transparent 64%),
+    radial-gradient(900px 600px at 6% 18%, rgba(56, 189, 248, 0.06), transparent 68%),
     var(--bg);
   background-attachment: fixed;
   color: var(--text);
@@ -187,8 +186,7 @@ button {
   flex-direction: column;
   gap: 12px;
   padding: 16px;
-  background: linear-gradient(180deg, rgba(59, 130, 246, 0.07), rgba(59, 130, 246, 0)),
-    var(--surface);
+  background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--r-lg);
 }
@@ -261,7 +259,7 @@ button {
   margin-top: 4px;
   padding: 2px 10px;
   border-radius: var(--r-full);
-  background: rgba(59, 130, 246, 0.16);
+  background: rgba(59, 130, 246, 0.13);
   font-size: var(--fs-sm);
   color: var(--accent-ink);
 }
@@ -283,8 +281,8 @@ button {
   align-items: center;
   gap: 4px;
   padding: 4px 12px;
-  background: rgba(59, 130, 246, 0.06);
-  border: 1px solid rgba(59, 130, 246, 0.18);
+  background: var(--surface-2);
+  border: 1px solid rgba(59, 130, 246, 0.11);
   border-radius: var(--r-full);
   font-size: var(--fs-base);
   color: var(--text-2);
@@ -345,9 +343,8 @@ button {
   flex-direction: column;
   /* 顶部一层极淡的蓝纱 + 蓝色描边：卡片在深蓝底上不是「一块更亮的灰」，
      而是「一块被蓝光照到的面」。描边透明度压到 0.16，只在边缘提示存在感。 */
-  background: linear-gradient(160deg, rgba(59, 130, 246, 0.07), rgba(59, 130, 246, 0) 46%),
-    var(--surface);
-  border: 1px solid rgba(59, 130, 246, 0.16);
+  background: var(--surface);
+  border: 1px solid rgba(59, 130, 246, 0.11);
   border-radius: var(--r-lg);
   overflow: hidden;
   cursor: pointer;
@@ -474,7 +471,7 @@ button {
 .tag {
   padding: 2px 8px;
   border-radius: var(--r-sm);
-  background: rgba(59, 130, 246, 0.12);
+  background: rgba(59, 130, 246, 0.10);
   font-size: var(--fs-xs);
   color: var(--text-2);
 }
@@ -482,7 +479,7 @@ button {
 /* 目标肌比器械重要一档，所以底更实、字更亮。两个都是蓝的，但深浅拉开，
    扫一眼就知道哪个是主要信息。 */
 .tag-target {
-  background: rgba(59, 130, 246, 0.26);
+  background: rgba(59, 130, 246, 0.20);
   color: var(--accent-ink);
 }
 
