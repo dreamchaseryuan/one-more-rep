@@ -49,7 +49,7 @@ describe('parseBackup —— 坏输入一律拒绝，且说明原因', () => {
   });
 
   it('缺 workouts 字段', () => {
-    const r = parseBackup(wrap({ app: 'fitness-app' }));
+    const r = parseBackup(wrap({ app: 'one-more-rep' }));
     expect(r.backup).toBeNull();
     expect(r.error).toBe('备份里没有 workouts 字段');
   });
@@ -57,7 +57,7 @@ describe('parseBackup —— 坏输入一律拒绝，且说明原因', () => {
 
 describe('parseBackup —— 旧版本兼容（四个版本都要能读进来）', () => {
   it('v1：只有 workouts 和 favorites，其余取空、不猜', () => {
-    const r = parseBackup(wrap({ app: 'fitness-app', version: 1, workouts: [workout('w1')], favorites: ['0025'] }));
+    const r = parseBackup(wrap({ app: 'one-more-rep', version: 1, workouts: [workout('w1')], favorites: ['0025'] }));
     expect(r.error).toBeNull();
     expect(r.fromVersion).toBe(1);
     expect(r.backup?.workouts).toHaveLength(1);
@@ -69,14 +69,14 @@ describe('parseBackup —— 旧版本兼容（四个版本都要能读进来）
   });
 
   it('v1 连 version 字段都没有时，当成 v1', () => {
-    const r = parseBackup(wrap({ app: 'fitness-app', workouts: [] }));
+    const r = parseBackup(wrap({ app: 'one-more-rep', workouts: [] }));
     expect(r.fromVersion).toBe(1);
     expect(r.backup).not.toBeNull();
   });
 
   it('v2：有 programId，仍没有 programs 和 contraindications', () => {
     const r = parseBackup(
-      wrap({ app: 'fitness-app', version: 2, workouts: [workout('w1')], programId: 'ppl' }),
+      wrap({ app: 'one-more-rep', version: 2, workouts: [workout('w1')], programId: 'ppl' }),
     );
     expect(r.fromVersion).toBe(2);
     expect(r.backup?.programId).toBe('ppl');
@@ -86,7 +86,7 @@ describe('parseBackup —— 旧版本兼容（四个版本都要能读进来）
 
   it('v3：有计划定义，没有禁忌', () => {
     const programs = [{ id: 'ppl', name: '推拉腿', days: [{ name: '推日', exercises: [] }] }];
-    const r = parseBackup(wrap({ app: 'fitness-app', version: 3, workouts: [], programs }));
+    const r = parseBackup(wrap({ app: 'one-more-rep', version: 3, workouts: [], programs }));
     expect(r.fromVersion).toBe(3);
     expect(r.backup?.programs).toHaveLength(1);
     expect(r.backup?.contraindications).toEqual([]);
@@ -95,7 +95,7 @@ describe('parseBackup —— 旧版本兼容（四个版本都要能读进来）
   it('v4：四样俱全', () => {
     const r = parseBackup(
       wrap({
-        app: 'fitness-app',
+        app: 'one-more-rep',
         version: 4,
         workouts: [workout('w1')],
         favorites: ['0025'],
@@ -110,7 +110,7 @@ describe('parseBackup —— 旧版本兼容（四个版本都要能读进来）
   });
 
   it('无论哪个版本，导入结果的 version 都归一成当前版本', () => {
-    const r = parseBackup(wrap({ app: 'fitness-app', version: 1, workouts: [] }));
+    const r = parseBackup(wrap({ app: 'one-more-rep', version: 1, workouts: [] }));
     expect(r.backup?.version).toBe(4);
   });
 });
@@ -119,7 +119,7 @@ describe('parseBackup —— 形状不对的条目被丢掉并计数', () => {
   it('缺 id / date / entries 的记录被过滤，skipped 报出条数', () => {
     const r = parseBackup(
       wrap({
-        app: 'fitness-app',
+        app: 'one-more-rep',
         version: 4,
         workouts: [
           workout('good'),
@@ -137,21 +137,21 @@ describe('parseBackup —— 形状不对的条目被丢掉并计数', () => {
 
   it('坏数据不会让好数据一起丢掉', () => {
     const r = parseBackup(
-      wrap({ app: 'fitness-app', version: 4, workouts: [workout('a'), 'garbage', workout('b')] }),
+      wrap({ app: 'one-more-rep', version: 4, workouts: [workout('a'), 'garbage', workout('b')] }),
     );
     expect(r.backup?.workouts.map((w) => w.id)).toEqual(['a', 'b']);
     expect(r.skipped).toBe(1);
   });
 
   it('favorites 里的非字符串被过滤', () => {
-    const r = parseBackup(wrap({ app: 'fitness-app', version: 4, workouts: [], favorites: ['a', 1, null, 'b'] }));
+    const r = parseBackup(wrap({ app: 'one-more-rep', version: 4, workouts: [], favorites: ['a', 1, null, 'b'] }));
     expect(r.backup?.favorites).toEqual(['a', 'b']);
   });
 
   it('形状不对的计划与禁忌被过滤', () => {
     const r = parseBackup(
       wrap({
-        app: 'fitness-app',
+        app: 'one-more-rep',
         version: 4,
         workouts: [],
         programs: [{ id: 'ok', name: '好的', days: [] }, { name: '缺 id', days: [] }, { id: 'x', name: '缺 days' }],
@@ -184,7 +184,18 @@ describe('buildBackup ↔ parseBackup 往返', () => {
 
   it('导出的文件带应用标记与版本号，缺了就会被别的应用的文件混进来', () => {
     const b = buildBackup([], [], null, [], []);
-    expect(b.app).toBe('fitness-app');
+    expect(b.app).toBe('one-more-rep');
     expect(b.version).toBe(4);
+  });
+
+  it('改名**之前**导出的备份仍然能导入 —— 旧标签不能被丢掉', () => {
+    // 2026-10-11 应用从 fitness-app 改名成 one-more-rep，备份的身份串跟着换了。
+    // 这条守着 LEGACY_TAGS：删掉它，改名那一刻之前导出的每一份备份都会变成废 JSON，
+    // 而备份是换设备时的唯一通路（localStorage 不跟人走）。
+    const r = parseBackup(wrap({ app: 'fitness-app', version: 4, workouts: [workout('w1')] }));
+    expect(r.backup).not.toBeNull();
+    expect(r.backup?.workouts.map((w) => w.id)).toEqual(['w1']);
+    // 导回来之后再导出，写的是**新**标签
+    expect(buildBackup(r.backup!.workouts, [], null, [], []).app).toBe('one-more-rep');
   });
 });

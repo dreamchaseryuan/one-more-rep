@@ -3,13 +3,20 @@ import type { Program } from './programs';
 import { localDate } from './date';
 
 /**
- * 备份文件的身份串，`parseBackup` 拿它挡住无关的 JSON（见下面的 `b.app !== APP_TAG`）。
+ * 备份文件的身份串，`parseBackup` 拿它挡住无关的 JSON。
  *
- * **故意不跟仓库名走。** 2026-10-11 仓库从 `fitness-app` 改名成 `one-more-rep`，
- * 但这里保持原样 —— 它认的是**数据格式**，不是网址。跟着改的话，之前导出的每一份
- * 备份都会被判成「这不是本应用的备份文件」，而备份正是换设备时的唯一通路。
+ * 2026-10-11 跟着改名从 `fitness-app` 换成了 `one-more-rep`。新导出的备份写的是新标签。
  */
-const APP_TAG = 'fitness-app';
+const APP_TAG = 'one-more-rep';
+
+/**
+ * 改名**之前**的标签，`parseBackup` 认它。
+ *
+ * **不要删。** 删掉就等于把改名那一刻之前导出的每一份备份变成一堆废 JSON ——
+ * 而备份是换设备、换浏览器时的唯一通路（localStorage 不跟人走）。
+ * 一个数据格式的身份串改了名，前提就是老文件还认得出来。
+ */
+const LEGACY_TAGS = ['fitness-app'];
 
 /**
  * 版本历史：
@@ -124,7 +131,9 @@ export function parseBackup(text: string): ParseResult {
   }
 
   const b = raw as Partial<Backup>;
-  if (b.app !== APP_TAG) {
+  // 缺 app 字段的当空串处理，落进下面的拒绝分支
+  const tag = typeof b.app === 'string' ? b.app : '';
+  if (tag !== APP_TAG && !LEGACY_TAGS.includes(tag)) {
     return { backup: null, error: '这不是本应用的备份文件', skipped: 0, fromVersion: 0 };
   }
   if (!Array.isArray(b.workouts)) {
