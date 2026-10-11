@@ -92,7 +92,7 @@ src/
   lib/date.ts                本地日期。**任何「哪一天」的值都必须走这里**
   lib/id.ts                  新记录 id。非安全上下文下 crypto.randomUUID 不存在
   lib/alert.ts               计时提示音 + 震动，含 iOS 的手势解锁
-  components/FilterBar       三维筛选
+  components/FilterBar       三维筛选（手机上默认收起 —— 展开时占首屏六成）
   components/ExerciseCard    动作卡片
   components/DetailPanel     动作详情抽屉
   components/WorkoutPanel    训练记录页
