@@ -18,24 +18,34 @@
 | iOS 上休息计时结束不响 | `AudioContext` 没在手势里解锁，**静默**失败 | `19d60ad` |
 | `media/index.json` 不在预缓存 | 离线或被墙时图全挂，连看过的图也不显示 | `见 vite.config.ts` |
 | 纯文档改动触发完整部署 | 改个错别字也拉 130 MB 媒体重新构建 | `117abaa` |
+| 项目零测试 | 下面那四个 bug 形状完全相同，却没有任何东西挡着下一个 | 本次 |
+| `date.ts` / README 把时区 bug 讲反了 | 说「晚上 8 点后写成第二天」，实际是**凌晨**写成**前一天** | 本次（加测试时发现） |
+
+## 测试（已完成）
+
+`npm test` 跑 57 个用例，全是纯函数，约 300ms。挂在 CI 的 `npm run build` 之前，
+且在拉媒体之前（测试几百毫秒，媒体 130 MB，顺序反了会白拉一遍才失败）。
+
+覆盖的是**已经踩过的那几个 bug**，不是泛泛的「提高质量」——它们形状完全一样：
+出在纯函数里、不报错、只是安静地算错。
+
+| 测试文件 | 守着什么 |
+|---|---|
+| `date.test.ts` | 时区。**同时是时区钉死的守卫**（见下） |
+| `useWorkouts.test.ts` | `touched`：计划预填 ≠ 实际做了；容量只算实际做的组 |
+| `programs.test.ts` | 轮转按**名字**推导、递增组的算术与几个不变量 |
+| `id.test.ts` | 非安全上下文下 id 不抛异常、形状仍是合法 v4 |
+| `backup.test.ts` | 坏输入不污染好数据、v1→v4 四个版本都能读进来 |
+
+**一处必须知道的机关**：`vitest.config.ts` 顶层把 `process.env.TZ` 钉成 `Asia/Shanghai`。
+不钉的话 CI 跑在 UTC 上，`toISOString()` 恰好等于本地日期，时区用例会**假通过**——
+而那正是它要防的那个 bug。`date.test.ts` 里第一条断言同时在守着这个钉死有没有被删掉。
+
+已做变异测试验证：把配置改成 UTC，该断言确实失败（不是摆设）。
 
 ## 值得做
 
-### 1. 加测试（vitest）——这里回报最高
-
-不是泛泛的「提高质量」。到现在踩的**每一个**功能 bug 都有同一个形状：
-**出在纯函数里、不报错、只是安静地算错**。
-
-- `localDate()` —— `toISOString()` 是 UTC，东八区晚上 8 点后算成第二天
-- `isFilled()` / `touched` —— 计划预填的组被当成「实际做了」，污染上次成绩和加重建议
-- `nextDayIndex()` —— 按下标推导，插入一个训练日后轮转整体错位
-- `newId()` —— 非安全上下文兜底
-
-再加 `parseBackup()`：v1→v4 四个版本各一条导入用例。
-
-半天工作量，挡住的正是已经发生过的那类错误。**目前项目零测试。**
-
-### 2. localStorage 写入加 debounce
+### 1. localStorage 写入加 debounce
 
 `useWorkouts.ts` 和 `usePrograms.ts` 都是 `useEffect` 里无条件 `JSON.stringify(全量)` 再同步写。
 练一年之后，改一个重量数字要序列化几千个 set 对象，而且 `localStorage` 是同步 API，会卡主线程。
@@ -43,7 +53,7 @@
 加 300ms debounce 即可。**但必须配 flush** —— 页面隐藏或关闭时要把待写的补上，
 否则最后几次改动会丢，那就比卡顿严重多了。
 
-### 3. 删掉 CDN 兜底
+### 2. 删掉 CDN 兜底
 
 `data.ts` 的 `mediaUrl()` 在本地缺图时回退到
 `https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/...`。两个问题：
@@ -56,27 +66,27 @@
 
 ## 可以做
 
-### 4. 加重建议的三个查询建索引
+### 3. 加重建议的三个查询建索引
 
 `lastPerformance` / `bestSet` / `weightHistory` 都是 O(历史条数)，且会在 `WorkoutPanel` 里**按动作各调一遍**。
 按 `history` 变化一次性建 `Map<exerciseId, ...>`。数据量大了才明显。
 
-### 5. `BASE` 改成环境变量
+### 4. `BASE` 改成环境变量
 
 `vite.config.ts` 写死 `/fitness-app/`，仓库改名就全站 404。
 改 `process.env.BASE_PATH ?? '/fitness-app/'`，CI 里传。
 
-### 6. CI 不拉 GIF
+### 5. CI 不拉 GIF
 
 `deploy.yml` 里的 `media:fetch-videos` 会拉 122 MB，`dist` 因此是 140 MB。
 GIF 是可选依赖（README「已知取舍」里写了），去掉这一步产物降到 18 MB 左右，
 部署和移动端首次加载都受益。代价：线上详情页只有静态图。
 
-### 7. 监听 `storage` 事件
+### 6. 监听 `storage` 事件
 
 两个标签页同时开着会互相覆盖（后写的赢）。个人自用影响小，优先级低。
 
-### 8. 升级 CI 里的 action 大版本
+### 7. 升级 CI 里的 action 大版本
 
 构建时有告警：`actions/checkout@v4` 等被强制跑在 Node 24 上。不影响功能。
 

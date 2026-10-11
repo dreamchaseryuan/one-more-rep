@@ -37,6 +37,8 @@ HTTPS_PROXY=http://127.0.0.1:7897 npm run media:fetch
 | `npm run dev` | 开发服务器 |
 | `npm run build` | 类型检查 + 生产构建 |
 | `npm run typecheck` | 只做类型检查 |
+| `npm test` | 跑单元测试（纯函数，几百毫秒） |
+| `npm run test:watch` | 测试的 watch 模式 |
 | `npm run data:fetch-raw` | 拉上游原始数据 |
 | `npm run data:build` | 重建精简数据集（改清洗规则/术语表后跑） |
 | `npm run data:profile` | 数据集体检：规模、维度分布、中文覆盖率 |
@@ -205,8 +207,13 @@ ID 稳定。`npm run check:programs`（已挂进 `build`）校验模板里每个
 
 **二、`toISOString()` 是 UTC**
 
-备份文件名曾经用 `exportedAt.slice(0, 10)`，那是 UTC —— 在东八区晚上 8 点之后导出，
-文件名会写成第二天。白天测不出来，晚上才发作。现在统一走 `src/lib/date.ts` 的 `localDate()`。
+备份文件名曾经用 `exportedAt.slice(0, 10)`，那是 UTC。在东八区，本地时间**早于 08:00**
+时 UTC 还停在前一天（本地 07:00 = UTC 前一天 23:00），于是「今天」被写成**昨天**。
+早上 8 点之后两者重合，所以白天随手一试是测不出来的。现在统一走 `src/lib/date.ts` 的 `localDate()`。
+
+**注意方向**：是**凌晨**出问题、写成**前一天**，不是「晚上 8 点之后写成第二天」——
+本地 20:00 = UTC 12:00，还在同一天。这条注释原先写反了，是加测试时才发现的
+（`date.test.ts` 里那条用例同时也在守着时区，见 [vitest.config.ts](vitest.config.ts) 里为什么要把 TZ 钉死）。
 
 `toISOString()` 用在**时间戳**上是对的（`finishedAt`、`exportedAt`），
 但任何当作「哪一天」用的值都必须走 `localDate()`。
