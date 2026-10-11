@@ -88,6 +88,7 @@ src/
   lib/usePrograms.ts         归你所有的计划 + 当前跟随哪一套（localStorage）
   lib/useContraindications.ts 伤病禁忌
   lib/programs.ts            模板加载、加重建议、递增组、按天摊开、快照、轮转推导
+  lib/recommend.ts           按使用者情况挑模板 + 裁剪（**不生成计划**，见下）
   lib/backup.ts              导出 / 导入备份：形状校验与版本兼容（当前 v4）
   lib/date.ts                本地日期。**任何「哪一天」的值都必须走这里**
   lib/id.ts                  新记录 id。非安全上下文下 crypto.randomUUID 不存在
@@ -99,6 +100,7 @@ src/
   components/ProgramPanel    计划面板：选计划、切换训练日、一键开始
   components/ProgramList     计划列表：选用多个模板、切换、新建
   components/ProgramEditor   计划编辑器：改训练日、动作、组数、次数区间、热身
+  components/PlanWizard      按 4 个问题推荐一份计划，并逐条说明改了什么
   components/ContraindicationSection  伤病禁忌：单个标记 + 按部位批量添加
   components/ExercisePicker  选动作（复用同一套搜索）
   components/RestTimer       组间休息倒计时
