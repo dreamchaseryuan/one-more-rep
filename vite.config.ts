@@ -35,10 +35,20 @@ export default defineConfig({
         ],
       },
       workbox: {
-        // 只预缓存应用外壳和动作数据（约 1.2 MB）。
-        // media/ 有 2648 个文件 130 MB，预缓存会直接把安装拖死。
-        globPatterns: ['**/*.{js,css,html}', 'data/*.json'],
-        globIgnores: ['**/media/**', '**/icons/**'],
+        // 预缓存应用外壳 + 动作数据 + 媒体清单（约 1.3 MB）。
+        //
+        // `media/index.json` 必须在这里。它不是媒体本身，是**媒体清单**
+        // （67 KB，2648 条路径），前端靠它判断一个动作的图在不在本地。
+        // 不带它的话，离线时清单取不到 → mediaFiles 变成空集合 →
+        // mediaUrl() 把所有图改用 CDN 兜底地址 → 离线全挂。
+        // 最坑的是连带效应：你刚看过的图**明明已经在 exercise-media 缓存里**，
+        // 但应用拿不到清单就不会去问本地缓存，而是去问一个联网才通的地址。
+        //
+        // media/images/ 和 media/videos/ 才是那 2648 个文件 130 MB，必须排除，
+        // 否则预缓存会把安装直接拖死。排除规则因此要精确到子目录 ——
+        // 写 `**/media/**` 会把上面那个 index.json 一起排除掉，等于白加。
+        globPatterns: ['**/*.{js,css,html}', 'data/*.json', 'media/*.json'],
+        globIgnores: ['**/media/images/**', '**/media/videos/**', '**/icons/**'],
         maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
         runtimeCaching: [
           {
