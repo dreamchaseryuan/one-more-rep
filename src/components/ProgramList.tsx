@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { PROGRAMS } from '../lib/programs';
+import { PlanWizard } from './PlanWizard';
 import type { ProgramStore } from '../lib/usePrograms';
 
 interface Props {
@@ -11,6 +12,19 @@ interface Props {
 
 export function ProgramList({ store, empty, onClose }: Props) {
   const [renaming, setRenaming] = useState<string | null>(null);
+  const [wizard, setWizard] = useState(false);
+
+  if (wizard) {
+    return (
+      <PlanWizard
+        onCancel={() => setWizard(false)}
+        onCreate={(rec, summary) => {
+          store.createFromRecommendation(rec, summary);
+          onClose();
+        }}
+      />
+    );
+  }
 
   return (
     <section className="program">
@@ -82,6 +96,11 @@ export function ProgramList({ store, empty, onClose }: Props) {
       )}
 
       <h3 className="program-subtitle">{empty ? '从模板开始' : '从模板新建一份'}</h3>
+
+      <button className="btn-add-ex program-blank" onClick={() => setWizard(true)}>
+        ✦ 按我的情况推荐一份（回答 4 个问题）
+      </button>
+
       <div className="program-cards">
         {PROGRAMS.map((tpl) => (
           <button

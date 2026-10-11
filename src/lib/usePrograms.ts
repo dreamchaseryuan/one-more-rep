@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useState } from 'react';
 import { getProgram, PROGRAMS, type Program, type ProgramDay } from './programs';
 import { usePersist } from './usePersist';
+import type { Recommendation } from './recommend';
 import type { WarmupItem } from '../types';
 
 const KEY = 'fitness:programs';
@@ -106,6 +107,29 @@ export function usePrograms() {
         days: [{ name: '第一天', focus: '', warmup: [], exercises: [] }],
       };
       return { programs: [...s.programs, blank], activeProgramId: id };
+    });
+  }, []);
+
+  /**
+   * 从「按你的情况推荐」的结果建一份计划。
+   *
+   * 和 createFromTemplate 的差别：训练日已经是被裁剪、调过次数区间的，所以直接存结果。
+   * 仍然记下 fromTemplate —— 它到底派生自哪个模板，「恢复模板初始状态」对它有意义的。
+   *
+   * `summary` 存进 desc：那些「改了什么、为什么」的完整说明只在向导里显示，
+   * 而 desc 是编辑器里的单行输入，装不下它们。存一行依据摘要，至少以后看得懂这份计划怎么来的。
+   */
+  const createFromRecommendation = useCallback((rec: Recommendation, summary: string) => {
+    setState((s) => {
+      const id = deriveId(rec.templateId, new Set(s.programs.map((p) => p.id)));
+      const program: Program = {
+        id,
+        name: rec.name,
+        desc: `按你的情况推荐：${summary}`,
+        fromTemplate: rec.templateId,
+        days: structuredClone(rec.days),
+      };
+      return { programs: [...s.programs, program], activeProgramId: id };
     });
   }, []);
 
@@ -314,6 +338,7 @@ export function usePrograms() {
     program,
     createFromTemplate,
     createBlank,
+    createFromRecommendation,
     setActive,
     rename,
     remove,

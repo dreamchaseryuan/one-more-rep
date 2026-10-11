@@ -1258,6 +1258,83 @@ button {
   margin-top: 12px;
 }
 
+/* ── 按情况推荐（PlanWizard）────────────────── */
+.wizard-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.wizard-label {
+  font-size: 13px;
+  color: var(--dim);
+}
+
+.wizard-result {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 18px;
+  padding: 14px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.wizard-result-head {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.wizard-result-meta {
+  font-size: 12px;
+  color: var(--dim);
+}
+
+/*
+ * 「改了什么、为什么」的逐条说明。这是整个功能里最要紧的一块 ——
+ * 没有它，使用者拿到一份被改过的计划却不知道为什么，就等于在信一个黑盒。
+ */
+.wizard-notes {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  margin: 0;
+  padding-left: 18px;
+  font-size: 13px;
+  line-height: 1.55;
+  color: #c3c9d4;
+}
+
+.wizard-note-warn {
+  color: var(--accent);
+}
+
+.wizard-days {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding-top: 4px;
+  border-top: 1px solid var(--border);
+}
+
+.wizard-day {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 5px;
+  padding: 4px 10px;
+  background: var(--surface);
+  border-radius: 999px;
+  font-size: 12px;
+}
+
+.wizard-day-count {
+  color: var(--dim);
+  font-size: 11px;
+}
+
 /* ── 计划编辑器 ───────────────────────────── */
 .editor-title {
   display: flex;
