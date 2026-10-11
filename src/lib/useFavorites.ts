@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
+import { usePersist } from './usePersist';
 
 const KEY = 'fitness:favorites';
 
@@ -12,9 +13,12 @@ export function useFavorites() {
     }
   });
 
-  useEffect(() => {
-    localStorage.setItem(KEY, JSON.stringify([...ids]));
-  }, [ids]);
+  // 必须转成数组：JSON.stringify(new Set()) 得到的是 `{}`，收藏会被静默清空。
+  //
+  // useMemo 不是为了省这点计算，是为了 **identity 稳定** —— 每次渲染都新建数组的话，
+  // usePersist 的依赖每次都变，无关的重渲染也会反复安排落盘。
+  const list = useMemo(() => [...ids], [ids]);
+  usePersist(KEY, list);
 
   const toggle = useCallback((id: string) => {
     setIds((prev) => {

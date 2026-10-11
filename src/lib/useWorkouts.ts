@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { localDate } from './date';
 import { newId } from './id';
+import { usePersist } from './usePersist';
 import type { LoggedExercise, SetEntry, Workout, WorkoutDaySnapshot } from '../types';
 
 const KEY = 'fitness:workouts';
@@ -52,9 +53,9 @@ export function useWorkouts() {
     }
   });
 
-  useEffect(() => {
-    localStorage.setItem(KEY, JSON.stringify(workouts));
-  }, [workouts]);
+  // 落盘推迟到停手之后。训练记录是全量序列化的：手机上一次按键要 17 ms（超过一帧），
+  // 而它在输入框的每次按键上都会跑。见 lib/usePersist.ts 里的实测表。
+  usePersist(KEY, workouts);
 
   const current = useMemo(() => workouts.find((w) => !w.finishedAt) ?? null, [workouts]);
   const history = useMemo(() => workouts.filter((w) => w.finishedAt).sort(byRecency), [workouts]);

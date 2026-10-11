@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { localDate } from './date';
+import { usePersist } from './usePersist';
 import type { Contraindication } from '../types';
 
 const KEY = 'fitness:contraindications';
@@ -20,9 +21,7 @@ export type { Contraindication };
 export function useContraindications() {
   const [items, setItems] = useState<Contraindication[]>(load);
 
-  useEffect(() => {
-    localStorage.setItem(KEY, JSON.stringify(items));
-  }, [items]);
+  usePersist(KEY, items);
 
   const byId = useMemo(() => new Map(items.map((c) => [c.exerciseId, c])), [items]);
 

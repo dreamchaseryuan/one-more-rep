@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { getProgram, PROGRAMS, type Program, type ProgramDay } from './programs';
+import { usePersist } from './usePersist';
 import type { WarmupItem } from '../types';
 
 const KEY = 'fitness:programs';
@@ -80,9 +81,8 @@ function load(): State {
 export function usePrograms() {
   const [state, setState] = useState<State>(load);
 
-  useEffect(() => {
-    localStorage.setItem(KEY, JSON.stringify(state));
-  }, [state]);
+  // 计划编辑器里改一个名字、调一个组数都会走这里，和训练记录同理
+  usePersist(KEY, state);
 
   const program = useMemo(
     () => state.programs.find((p) => p.id === state.activeProgramId) ?? null,
