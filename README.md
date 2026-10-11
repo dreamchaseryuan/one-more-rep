@@ -49,25 +49,40 @@ HTTPS_PROXY=http://127.0.0.1:7897 npm run media:fetch
 
 ```
 data/                        原始数据（不直接进前端）
-  exercises.json             上游 17.4 MB 原始数据集
+  exercises.json             上游 17.4 MB 原始数据集（不进版本库）
   name_zh.json               中文名映射
   terms.zh.json              部位/器械/目标肌 中英术语表
   name-overrides.json        人工校正表（10 条）
+  programs.json              六个训练计划模板
+  warmups.json               七个热身方案（21 个训练日共用）
+  LICENSE / NOTICE.md        上游授权声明，不要删
 scripts/
   profile.mjs                数据集体检
   build-data.mjs             清洗 + 裁剪 → 精简数据集
+  fetch-raw.mjs              拉上游原始数据集
   fetch-media.mjs            媒体下载 + 生成清单
+  check-programs.mjs         校验模板里的动作 ID / 热身方案名（已挂进 build）
+  make-icons.mjs             生成 PWA 图标（手写 PNG 编码）
+  lib/proxy-bootstrap.mjs    让 Node 的 fetch 读 HTTP_PROXY（见上文「代理」）
 src/
   lib/data.ts                加载 / 搜索 / 筛选 / 媒体回退
   lib/useFavorites.ts        收藏夹（localStorage）
   lib/useWorkouts.ts         训练记录：增删动作与组、上次成绩、进步曲线
-  lib/programs.ts            计划模板加载、加重建议、按天摊开成可填入的组
-  lib/useProgram.ts          当前计划与轮转到第几天（localStorage）
+  lib/usePrograms.ts         归你所有的计划 + 当前跟随哪一套（localStorage）
+  lib/useContraindications.ts 伤病禁忌
+  lib/programs.ts            模板加载、加重建议、递增组、按天摊开、快照、轮转推导
+  lib/backup.ts              导出 / 导入备份：形状校验与版本兼容（当前 v4）
+  lib/date.ts                本地日期。**任何「哪一天」的值都必须走这里**
+  lib/id.ts                  新记录 id。非安全上下文下 crypto.randomUUID 不存在
+  lib/alert.ts               计时提示音 + 震动，含 iOS 的手势解锁
   components/FilterBar       三维筛选
   components/ExerciseCard    动作卡片
   components/DetailPanel     动作详情抽屉
   components/WorkoutPanel    训练记录页
   components/ProgramPanel    计划面板：选计划、切换训练日、一键开始
+  components/ProgramList     计划列表：选用多个模板、切换、新建
+  components/ProgramEditor   计划编辑器：改训练日、动作、组数、次数区间、热身
+  components/ContraindicationSection  伤病禁忌：单个标记 + 按部位批量添加
   components/ExercisePicker  选动作（复用同一套搜索）
   components/RestTimer       组间休息倒计时
   components/ProgressChart   最大重量走势
@@ -75,8 +90,11 @@ public/
   data/exercises.json        精简数据集 0.69 MB（前端实际加载的）
   media/images/              1324 张缩略图（8.5 MB）
   media/videos/              1324 个动画 GIF（122 MB，可选）
-  media/index.json           本地已有媒体的清单
+  media/index.json           本地已有媒体的清单（67 KB，**必须预缓存**，理由见 vite.config.ts）
 ```
+
+术语以 [CONTEXT.md](CONTEXT.md) 为准；几个绕不开的设计决定写在 [docs/adr/](docs/adr/)；
+优化建议与待办收在 [docs/backlog.md](docs/backlog.md)。
 
 ## 热身
 
@@ -239,9 +257,12 @@ ID 稳定。`npm run check:programs`（已挂进 `build`）校验模板里每个
 
 **已知不足：**
 
-- 同一天练两次同一个动作时，曲线两个点的 x 轴标签都是同一天，看不出先后（趋势方向是对的）。
-- 没有计划/模板功能。想固定练某几个动作，得每次手动加。
-- 没有导出。数据只在浏览器里，清缓存就没了。
+- **数据不跨设备同步。** 训练记录只在这一个浏览器的 localStorage 里——手机记的，电脑上看不到，
+  反之亦然。唯一的搬运方式是「导出备份」再「导入备份」。想真正同步得加后端，
+  三条路的取舍见 [docs/backlog.md](docs/backlog.md)。
+- **同一天练两次同一个动作时**，曲线两个点的 x 轴标签都是同一天，看不出先后（趋势方向是对的）。
+- **离线时只有看过的动作图能显示。** 缩略图 8.5 MB 不进预缓存（会和 122 MB 的 GIF 一起把安装拖死），
+  改成「看过就缓存」。所以健身房信号不好时，没点开过的动作是没有图的——文字说明、组数、记录都不受影响。
 
 ## 数据管道做了什么
 
