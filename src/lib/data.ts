@@ -1,8 +1,5 @@
 import type { Exercise, FilterKey, Filters, IndexedExercise } from '../types';
 
-/** 上游数据集（CC/署名见 NOTICE），本地媒体缺失时回退到这里 */
-const MEDIA_RAW = 'https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main';
-
 /**
  * 部署在 GitHub Pages 项目站点时，站点根是 /<仓库名>/ 而不是 /。
  * 所有静态资源路径必须带上 BASE_URL，写死 '/data/...' 会全部 404。
@@ -50,20 +47,46 @@ function buildOptions(exercises: Exercise[], key: FilterKey, labelKey: keyof Exe
     .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label, 'zh'));
 }
 
+/**
+ * 读媒体清单。**失败一律当成「没有媒体」，不抛异常。**
+ *
+ * 不能只看 `res.ok`：媒体没下过时（没跑 `media:fetch`），dev server 和不少静态主机的
+ * SPA fallback 会返回 `index.html` **配 200**，于是 `res.ok` 为真、`.json()` 抛
+ * `Unexpected token '<'`。而这个异常会冒出去让整个应用显示「数据加载失败」，
+ * 把使用者引去查动作数据 —— 完全指错方向。
+ *
+ * 而媒体本来就是**可选依赖**（见 README「已知取舍」），没有它应用应该照常能用，
+ * 只是图显示成占位。所以这里吞掉所有失败。
+ */
+async function loadMediaFiles(): Promise<Set<string>> {
+  try {
+    const res = await fetch(`${BASE}media/index.json`);
+    if (!res.ok) return new Set();
+    const json = (await res.json()) as { files?: unknown };
+    return new Set(Array.isArray(json.files) ? (json.files as string[]) : []);
+  } catch {
+    return new Set();
+  }
+}
+
 let cache: Promise<Dataset> | null = null;
 
 export function loadDataset(): Promise<Dataset> {
   cache ??= (async () => {
-    const [exRes, mediaRes] = await Promise.all([
+    const [exRes, mediaFiles] = await Promise.all([
       fetch(`${BASE}data/exercises.json`),
-      fetch(`${BASE}media/index.json`).catch(() => null),
+      loadMediaFiles(),
     ]);
     if (!exRes.ok) throw new Error(`加载动作数据失败: HTTP ${exRes.status}`);
-    const raw: Exercise[] = await exRes.json();
 
-    const mediaFiles = new Set<string>(
-      mediaRes?.ok ? ((await mediaRes.json()).files as string[]) : [],
-    );
+    let raw: Exercise[];
+    try {
+      raw = await exRes.json();
+    } catch {
+      // 同一种坑：文件不在时服务器可能给 index.html + 200，错误原文是
+      // `Unexpected token '<'`，对着它查不出问题。给一句人话。
+      throw new Error('动作数据不是合法 JSON —— 多半是 public/data/exercises.json 还没生成');
+    }
 
     const exercises: IndexedExercise[] = raw.map((e) => ({ ...e, haystack: haystack(e) }));
 
@@ -81,13 +104,27 @@ export function loadDataset(): Promise<Dataset> {
   return cache;
 }
 
-/** 本地没有就用上游 URL —— 保证任何情况下都有图 */
-export function mediaUrl(dataset: Dataset, rel: string): string {
-  return dataset.mediaFiles.has(rel) ? `${BASE}media/${rel}` : `${MEDIA_RAW}/${rel}`;
-}
-
 export function hasLocalMedia(dataset: Dataset, rel: string): boolean {
   return dataset.mediaFiles.has(rel);
+}
+
+/**
+ * 媒体地址。**没有兜底** —— 本地没有就返回 `null`，调用方必须自己画出「没有图」的样子。
+ *
+ * 这里原来会回退到 `raw.githubusercontent.com`。删掉它有三个理由：
+ *
+ * 1. **它是假的兜底。** 那个域名在国内基本不通。注释写的是「保证任何情况下都有图」，
+ *    实际是「任何情况下都挂在那儿等超时」—— 比直接显示「没有图」更糟，因为使用者
+ *    看不出是在等还是在坏。
+ * 2. **它永远不会被缓存。** 那个 URL 里没有 `/media/` 路径段，匹配不上 workbox 的
+ *    运行时缓存规则，所以连「看过一次以后就有了」这个最低限度的好处都拿不到。
+ * 3. **它把请求发给第三方**，而这份媒体的授权是随本应用走的（见 data/NOTICE.md）。
+ *
+ * 返回 `null` 而不是一个注定 404 的路径，是为了让 TypeScript 逼着调用方处理这种情况 ——
+ * 它在**开发时**（没跑 `media:fetch`）和**弱网/离线时**都会出现，后者在健身房是常态。
+ */
+export function mediaUrl(dataset: Dataset, rel: string): string | null {
+  return dataset.mediaFiles.has(rel) ? `${BASE}media/${rel}` : null;
 }
 
 /** 多词空格分隔 = AND；中文名命中权重最高 */

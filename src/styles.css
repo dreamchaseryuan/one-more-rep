@@ -245,6 +245,22 @@ button {
   display: block;
 }
 
+/*
+ * 本机没有这张图，或此刻取不到（离线 / 弱网）。没有兜底域名可退了，所以直接画出来。
+ * 容器（.card-media / .drawer-media）已经有 aspect-ratio 和底色，所以留空也不会塌、不会跳版。
+ * 颜色用写死的深灰而不是 --dim：底色 --media-bg 是浅色，--dim 是为深色主题准备的，在这上面看不清。
+ */
+.media-missing {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  color: #6b7280;
+  font-size: 12px;
+  user-select: none;
+}
+
 .fav {
   position: absolute;
   top: 6px;

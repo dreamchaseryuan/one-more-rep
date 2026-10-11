@@ -31,6 +31,7 @@ export function DetailPanel({
   contraStore,
 }: Props) {
   const [marking, setMarking] = useState(false);
+  const [broken, setBroken] = useState(false);
   const contra = contraStore.get(exercise.id);
   useEffect(() => {
     const onKey = (ev: KeyboardEvent) => {
@@ -40,7 +41,12 @@ export function DetailPanel({
     return () => window.removeEventListener('keydown', onKey);
   }, [onClose]);
 
-  // 本地下过 GIF 就演示动画，否则退回静态缩略图
+  // 抽屉里可以点「相关动作」换动作，换了就把上一张图的加载失败状态清掉，
+  // 否则新动作会一直显示占位。
+  useEffect(() => setBroken(false), [exercise.id]);
+
+  // 本地下过 GIF 就演示动画，否则退回静态缩略图。
+  // 两者都没有时 src 是 null —— 没有兜底域名了，得自己画占位。
   const showGif = hasLocalMedia(dataset, exercise.gif);
   const src = mediaUrl(dataset, showGif ? exercise.gif : exercise.image);
 
@@ -71,8 +77,16 @@ export function DetailPanel({
         </header>
 
         <div className="drawer-media">
-          <img src={src} alt={exercise.nameZh} />
-          {!showGif && <span className="media-note">静态图 · 动画需下载 GIF</span>}
+          {src !== null && !broken ? (
+            <>
+              <img src={src} alt={exercise.nameZh} onError={() => setBroken(true)} />
+              {!showGif && <span className="media-note">静态图 · 动画需下载 GIF</span>}
+            </>
+          ) : (
+            <div className="media-missing" title="这张图本机没有，或此刻取不到">
+              无图
+            </div>
+          )}
         </div>
 
         <button
