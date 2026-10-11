@@ -444,6 +444,12 @@ gh api -X POST repos/<用户>/one-more-rep/pages -f build_type=workflow
 
 之后 `git push origin main` 即可，workflow 跑完就上线。
 
+**连着推会只构建最后一次。** `build` 那个 job 挂了 `cancel-in-progress: true` —— 后一次推
+上来时，前一次还在跑的构建直接取消（每次构建要拉 130 MB 媒体，而它的产物注定被覆盖）。
+`deploy` 那步是 `false`，**部署永远串行、绝不中途取消**：掐断一个正在进行的部署会留下
+不一致的环境。所以前一次如果已经进到部署阶段了，它会跑完，然后被后一次覆盖 —— 最终生效的
+永远是最新那次。
+
 **发布前先确认一件事**：`*.github.io` 在部分网络环境下访问不稳定。
 手机浏览器打开 `https://yuhonas.github.io/free-exercise-db/` 试一下，
 能秒开就说明可用；打不开或很慢，就换下面的方案。
