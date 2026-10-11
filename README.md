@@ -1,6 +1,6 @@
 # 动作库 · 健身助手
 
-**在线使用：<https://yuan-20022.github.io/one-more-rep/>**
+**在线使用：<https://dreamchaseryuan.github.io/one-more-rep/>**
 
 手机上打开后选「添加到主屏幕」，它就是一个独立 App —— 有自己的图标、全屏打开、**没网也能用**
 （首次加载需要联网缓存，之后不用）。不需要装任何东西，也没有账号。
@@ -21,12 +21,12 @@
 
 ## 快速开始
 
-**只是想用**：直接打开 <https://yuan-20022.github.io/one-more-rep/> 就行，下面这些都不用做。
+**只是想用**：直接打开 <https://dreamchaseryuan.github.io/one-more-rep/> 就行，下面这些都不用做。
 
 **想在本地跑一份**：
 
 ```bash
-git clone https://github.com/yuan-20022/one-more-rep.git
+git clone https://github.com/dreamchaseryuan/one-more-rep.git
 cd one-more-rep
 npm install
 npm run dev             # http://localhost:5173
@@ -408,8 +408,8 @@ ID 稳定。`npm run check:programs`（已挂进 `build`）校验模板里每个
 本地跑的问题是：**手机得连同一个 WiFi** 才能打开。而训练记录是在健身房做的，
 那里用的是流量、不在家网——所以在健身房根本用不了。要解决只能发布到 HTTPS 上。
 
-**线上地址：<https://yuan-20022.github.io/one-more-rep/>**（2026-10-11 上线）
-仓库 `yuan-20022/one-more-rep`，`main` 分支推送即自动部署。手机用 Chrome/Safari 打开，
+**线上地址：<https://dreamchaseryuan.github.io/one-more-rep/>**（2026-10-11 上线）
+仓库 `dreamchaseryuan/one-more-rep`，`main` 分支推送即自动部署。手机用 Chrome/Safari 打开，
 选「添加到主屏幕」，就是一个独立 App。
 
 ### 局域网调试 ≠ 线上环境
