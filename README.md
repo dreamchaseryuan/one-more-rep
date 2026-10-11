@@ -274,19 +274,41 @@ ID 稳定。`npm run check:programs`（已挂进 `build`）校验模板里每个
 本地跑的问题是：**手机得连同一个 WiFi** 才能打开。而训练记录是在健身房做的，
 那里用的是流量、不在家网——所以在健身房根本用不了。要解决只能发布到 HTTPS 上。
 
+**线上地址：<https://yuan-20022.github.io/fitness-app/>**（2026-10-11 上线）
+仓库 `yuan-20022/fitness-app`，`main` 分支推送即自动部署。手机用 Chrome/Safari 打开，
+选「添加到主屏幕」，就是一个独立 App。
+
+### 局域网调试 ≠ 线上环境
+
+有个不明显的区别值得记住：**局域网 HTTP 不是安全上下文**。
+在 `http://192.168.x.x:5173` 下实测：
+
+| | `localhost:5173` | 局域网 IP | 线上 HTTPS |
+|---|---|---|---|
+| `isSecureContext` | true | **false** | true |
+| `crypto.randomUUID` | 有 | **undefined** | 有 |
+| `navigator.serviceWorker` | 有 | **undefined** | 有 |
+
+也就是说，**PWA 在局域网下根本试不出来**——「添加到主屏幕」和离线缓存必须部署到 HTTPS
+才能验证。而 `crypto.randomUUID` 在那个环境下是 `undefined`，调用会抛异常并让 React
+卸载整棵树（页面变空白）。所以 `src/lib/id.ts` 里那个 `getRandomValues` 兜底不是多余的，
+它保证局域网调试这条路能走（见该文件的注释）。
+
 ### GitHub Pages
 
 **前置：仓库必须是 public。** 免费账号开不了 private 仓库的 Pages，需要 GitHub Pro。
 
 ```bash
-git remote add origin https://github.com/<用户>/fitness-app.git
-git push -u origin main
+gh repo create <用户>/fitness-app --public --source=. --remote=origin
 ```
 
-推送后：仓库 **Settings → Pages → Source** 选 **GitHub Actions**，等 workflow 跑完。
+推送前**还要开 Pages 并把 Source 设为 GitHub Actions**，否则 `deploy-pages` 会失败：
 
-站点地址：`https://<用户>.github.io/fitness-app/`
-手机上用 Chrome/Safari 打开，选「添加到主屏幕」，就是一个独立 App。
+```bash
+gh api -X POST repos/<用户>/fitness-app/pages -f build_type=workflow
+```
+
+之后 `git push origin main` 即可，workflow 跑完就上线。
 
 **发布前先确认一件事**：`*.github.io` 在部分网络环境下访问不稳定。
 手机浏览器打开 `https://yuhonas.github.io/free-exercise-db/` 试一下，
@@ -298,12 +320,19 @@ git push -u origin main
 配置：构建命令 `npm run build`，输出目录 `dist`，其余同 GitHub Pages。
 需要先在浏览器里授权它们的 GitHub App——这一步得你自己点。
 
-### 部署相关的两个坑
+### 部署相关的四个坑
 
 - **`vite.config.ts` 里的 `BASE` 必须和仓库名一致**。项目站点在 `/<仓库名>/` 下，
   写死 `/data/...` 会全部 404。dev 和 build 用同一个 base，避免路径 bug 只在发布后暴露。
+  **所以仓库一旦定名就不能随便改**，改名要同步改 `BASE`。
 - **媒体不进仓库**（140 MB），由 CI 在构建时现拉（见 workflow 里的 `media:fetch`）。
   否则每次 CI 都要 checkout 140 MB。
+- **`gh` 的 token 必须额外持有 `workflow` scope 才能推 `.github/workflows/` 下的文件**，
+  否则推送会被**原子拒绝**（远端不会有任何部分推送成功，看不出推到了哪一步）。
+  报错是 `refusing to allow an OAuth App to create or update workflow ... without workflow scope`。
+  修法：`gh auth refresh -h github.com -s workflow`，会在浏览器里走一次设备授权。
+- **`workflow_dispatch` 不受 `paths-ignore` 影响**。workflow 里配了纯文档改动不触发部署，
+  但那只对 `push` 生效；真需要重跑时去 Actions 页面点 Run workflow 即可。
 
 ## 已知取舍
 
