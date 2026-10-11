@@ -4,12 +4,18 @@ import { VitePWA } from 'vite-plugin-pwa';
 
 /**
  * GitHub Pages 的项目站点在 https://<用户>.github.io/<仓库名>/ 下，
- * 所以站点根不是 '/' 而是 '/<仓库名>/'。改仓库名就得改这里。
+ * 所以站点根不是 '/' 而是 '/<仓库名>/'。
+ *
+ * **这一行和仓库名是硬绑定的**：对不上就是全站 404（页面能开，但所有资源加载失败，
+ * 白屏）。改仓库名时这一行必须同步改，两处一起提交。
  *
  * dev 和 build 用同一个 base —— 不在开发时用 '/' 而在构建时换掉。
  * 两边不一致的话，路径 bug 只在发布后才暴露，那时候最难查。
+ *
+ * 注意：`src/lib/backup.ts` 里也有个 `'fitness-app'` 常量，**那个不要跟着改** ——
+ * 它是备份格式的校验串，认的是数据格式不是网址，理由写在那边的注释里。
  */
-const BASE = '/fitness-app/';
+const BASE = '/one-more-rep/';
 
 export default defineConfig({
   base: BASE,

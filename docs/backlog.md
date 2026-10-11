@@ -68,8 +68,12 @@
 
 ### 2. `BASE` 改成环境变量
 
-`vite.config.ts` 写死 `/fitness-app/`，仓库改名就全站 404。
-改 `process.env.BASE_PATH ?? '/fitness-app/'`，CI 里传。
+`vite.config.ts` 写死 `/one-more-rep/`，仓库改名就全站 404。
+改 `process.env.BASE_PATH ?? '/one-more-rep/'`，CI 里传。
+
+**2026-10-11 这个坑真踩了一次**：仓库从 `fitness-app` 改名成 `one-more-rep`，
+两处（仓库设置 + `BASE`）必须同时改。当时是手动一起提交的 —— 顺序是先把 `BASE`
+改好提交，再改仓库名，最后推送，中间只有几分钟是坏的。改成环境变量之后就没这一步了。
 
 ### 3. CI 不拉 GIF
 

@@ -2,6 +2,13 @@ import type { Contraindication, Workout } from '../types';
 import type { Program } from './programs';
 import { localDate } from './date';
 
+/**
+ * 备份文件的身份串，`parseBackup` 拿它挡住无关的 JSON（见下面的 `b.app !== APP_TAG`）。
+ *
+ * **故意不跟仓库名走。** 2026-10-11 仓库从 `fitness-app` 改名成 `one-more-rep`，
+ * 但这里保持原样 —— 它认的是**数据格式**，不是网址。跟着改的话，之前导出的每一份
+ * 备份都会被判成「这不是本应用的备份文件」，而备份正是换设备时的唯一通路。
+ */
 const APP_TAG = 'fitness-app';
 
 /**
