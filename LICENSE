@@ -19,15 +19,3 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
-
-------------------------------------------------------------------------------
-
-Scope note — the MIT license above covers the application code, the data
-pipeline, and the Chinese names and cleaning performed for this project.
-
-It does NOT cover:
-
-- The upstream exercise dataset — MIT, © Hasan Emir Yıldırım, see data/LICENSE.
-- The exercise media (images and GIFs) — © Gym visual, https://gymvisual.com/.
-  It is not distributed in this repository, and this repository grants no
-  rights to it. See data/NOTICE.md before using it anywhere.

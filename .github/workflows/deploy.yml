@@ -16,6 +16,8 @@ on:
       - '**/*.md'
       - 'docs/**'
       - '.gitignore'
+      # LICENSE 在仓库根目录、不在 public/ 里，所以它不进构建产物 —— 改许可不需要重新部署
+      - 'LICENSE'
   workflow_dispatch:
 
 permissions:
