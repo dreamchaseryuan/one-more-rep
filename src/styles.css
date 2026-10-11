@@ -1,18 +1,24 @@
 :root {
-  --bg: #0d0f12;
-  --surface: #15181d;
-  --surface-2: #1c2028;
+  /* 炭灰色阶，不是纯黑。原先 --bg 是 #0d0f12（亮度 13/255），几乎是纯黑 ——
+     在手机 OLED 上夜里看着发死，而且纯黑是「AI 默认深色主题」最典型的特征。
+     整体提亮 14 级，各层之间的明度差保持不变，所以层次关系没动。 */
+  --bg: #1b1e23;
+  --surface: #23272d;
+  --surface-2: #2b3038;
 
   /* 边框两档。原先 #262b34 / #3a4150 / #3d4553 三个，后两个几乎一模一样，合并。 */
-  --border: #262b34;
-  --border-strong: #3d4553;
+  --border: #363c46;
+  --border-strong: #4b5361;
 
   /* 文字四档。原先有七个灰度在抢三四个角色 —— #9aa1ad 和 #8b929e 是同一档，
      #5f6673 和 #6b7280 也是。按亮度取最近的一档并过来。 */
   --text: #e8eaed;
   --text-2: #c3c9d4;
   --dim: #8b929e;
-  --text-4: #6b7280;
+  /* 最弱一档。底色提亮之后它在 #1b1e23 上的对比度掉到 3.6:1 —— 低于 WCAG AA 的
+     4.5:1（原先在近黑底上是 4.0:1，本来就不达标）。提亮到这个值刚好 4.7:1，
+     仍然比 --dim 弱，层级关系不变。 */
+  --text-4: #7f8694;
 
   --accent: #f97316;
   --accent-soft: rgba(249, 115, 22, 0.14);
@@ -84,7 +90,7 @@ button {
   align-items: center;
   gap: 12px;
   padding: 12px 24px;
-  background: rgba(13, 15, 18, 0.86);
+  background: rgba(27, 30, 35, 0.86);
   backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--border);
 }
@@ -1066,7 +1072,7 @@ button {
 
 .hist-ex {
   padding: 12px 0;
-  border-bottom: 1px solid rgba(38, 43, 52, 0.6);
+  border-bottom: 1px solid rgba(54, 60, 70, 0.6);
 }
 
 .hist-ex:last-child {
@@ -1197,7 +1203,7 @@ button {
 
 .plan-ex {
   padding: 12px 0;
-  border-bottom: 1px solid rgba(38, 43, 52, 0.55);
+  border-bottom: 1px solid rgba(54, 60, 70, 0.55);
 }
 
 .plan-ex-main {
@@ -1540,7 +1546,7 @@ button {
   gap: 12px;
   flex-wrap: wrap;
   padding: 8px 0;
-  border-bottom: 1px solid rgba(38, 43, 52, 0.5);
+  border-bottom: 1px solid rgba(54, 60, 70, 0.5);
 }
 
 .editor-ex-name {
