@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { Dataset } from '../lib/data';
 import type { FilterKey, Filters } from '../types';
 
@@ -13,23 +13,50 @@ const COLLAPSED_COUNT = 8;
 /** 窄屏（手机）。和应用里唯一的断点保持一致，见 styles.css 的 @media */
 const NARROW = '(max-width: 720px)';
 
+/**
+ * 窄屏检测，**跟随窗口变化**。
+ *
+ * 原先这里是 `useState(() => window.matchMedia(NARROW).matches)` —— 只在挂载那一刻读一次。
+ * 后果是转屏、拖窗口、或者开发时改预览宽度，面板都保持挂载时的样子不动。
+ * （实测：面板 550px 宽时挂载，之后缩到 375px，面板还开着，占掉首屏 59%。）
+ */
+function useNarrow(query: string) {
+  const [narrow, setNarrow] = useState(() => window.matchMedia(query).matches);
+  useEffect(() => {
+    const mq = window.matchMedia(query);
+    const sync = () => setNarrow(mq.matches);
+    sync();
+    mq.addEventListener('change', sync);
+    return () => mq.removeEventListener('change', sync);
+  }, [query]);
+  return narrow;
+}
+
 interface Props {
   dataset: Dataset;
   filters: Filters;
   onChange: (next: Filters) => void;
+  /** 使用者有没有主动缩过范围（搜索词 / 筛选 / 只看收藏）。见 App.tsx 的 `narrowed` */
+  narrowed: boolean;
 }
 
-export function FilterBar({ dataset, filters, onChange }: Props) {
+export function FilterBar({ dataset, filters, onChange, narrowed }: Props) {
+  const narrow = useNarrow(NARROW);
+
   /**
-   * 整块筛选面板开合。**手机上默认收起。**
+   * 整块筛选面板开合。规则两条：
    *
-   * 收起的理由：三排 chip 在 390px 上要占掉约 500px，也就是首屏的六成 ——
-   * 得往下滚过大半屏才看见第一个动作。而多数时候使用者是用关键词搜的，
-   * 筛选是偶尔才用一次的东西，不该常驻。
+   * 1. **手机上出了结果就收起。** 三排 chip 在 375px 上占 478px，是首屏的 59% ——
+   *    不收的话第一个动作卡片要滚到 653px 才出现。桌面宽度够，一直开着。
+   * 2. **还没缩范围时手机上也要开着**，因为那时候面板**就是**内容：
+   *    一个条件都没选的时候不铺结果（见 App.tsx 的 `.library-start`）。
    *
-   * 桌面宽度够，默认展开，不给人多一次点击。
+   * `manual` 是「使用者自己点过」的覆盖值，`narrowed` 一变就丢掉、回到自动值 ——
+   * 和 ProgramPanel 里 `manual ?? derived` 是同一个写法。
    */
-  const [open, setOpen] = useState(() => !window.matchMedia(NARROW).matches);
+  const [manual, setManual] = useState<boolean | null>(null);
+  useEffect(() => setManual(null), [narrowed]);
+  const open = manual ?? (!narrow || !narrowed);
 
   /** 每个维度内部的「+N」展开（和上面那个整块开合是两回事） */
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
@@ -60,7 +87,7 @@ export function FilterBar({ dataset, filters, onChange }: Props) {
       <div className="filters-head">
         <button
           className="filters-toggle"
-          onClick={() => setOpen((o) => !o)}
+          onClick={() => setManual(!open)}
           aria-expanded={open}
         >
           <span className="filters-caret">{open ? '▾' : '▸'}</span>

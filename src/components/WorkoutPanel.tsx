@@ -11,6 +11,7 @@ import type { IndexedExercise, SetEntry } from '../types';
 import { ExercisePicker } from './ExercisePicker';
 import { RestTimer } from './RestTimer';
 import { ProgressChart } from './ProgressChart';
+import { WarmupList } from './WarmupList';
 
 interface Props {
   dataset: Dataset;
@@ -134,6 +135,22 @@ export function WorkoutPanel({
               </button>
             </div>
           </header>
+
+          {/*
+            热身摆在这里、摆在动作之前 —— 这才是它被用到的时刻：你已经站在健身房，
+            照着手机往下做。以前它只在计划页出现，一点「开始训练」就消失了。
+            快照里没有 warmup 的是旧记录和自由训练，跳过即可。
+          */}
+          {current.day?.warmup && current.day.warmup.length > 0 && (
+            <div className="warmup">
+              <span className="warmup-label">热身</span>
+              <WarmupList
+                items={current.day.warmup}
+                byId={dataset.byId}
+                onOpenExercise={onOpenExercise}
+              />
+            </div>
+          )}
 
           {current.entries.length === 0 && (
             <p className="hint">还没有动作。点下面的「添加动作」开始。</p>

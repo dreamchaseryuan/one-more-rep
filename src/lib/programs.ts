@@ -315,6 +315,10 @@ export function buildDaySnapshot(
       sets: item.sets,
       repRange: item.repRange,
     })),
+    // 热身原样抄进快照，**不按 `include` 过滤**：那个谓词是给伤病禁忌用的，
+    // 而热身里大部分条目根本不在动作库里（绕环、空杆活动），拿它去筛是另一码事。
+    // 现在也没有证据说有人需要这个，所以先不做 —— 保持这条路径和以前一样简单。
+    warmup: day.warmup,
   };
 }
 

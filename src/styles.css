@@ -538,6 +538,18 @@ button {
   text-underline-offset: 3px;
 }
 
+/*
+ * 打开动作库时的初始态：还没缩范围，一个结果都不铺，只留一句话说明为什么。
+ *
+ * 和 .empty 有意做得不一样 —— 那个是「搜了但没有」，居中的大留白是对的；
+ * 这个是「还没开始搜」，需求是让人接着往下选，所以贴着筛选面板、不抢地方。
+ */
+.library-start {
+  max-width: 460px;
+  margin: 14px 2px 0;
+  line-height: 1.7;
+}
+
 .empty,
 .center-state {
   padding: 64px 24px;
@@ -1256,7 +1268,7 @@ button {
 }
 
 .plan-ex {
-  padding: 12px 0;
+  padding: 10px 0;
   border-bottom: 1px solid rgba(54, 60, 70, 0.55);
 }
 
@@ -1309,7 +1321,10 @@ button {
  * 那会把它推到行尾，在有 1200px 可推的时候就是把一行信息劈成两半。
  */
 .plan-ex-suggest {
-  padding: 2px 8px;
+  /* 只在有历史记录时出现，所以它自带一行 —— 不再是行内的小胶囊 */
+  display: block;
+  margin-top: 6px;
+  padding: 3px 8px;
   border-radius: var(--r-sm);
   font-size: var(--fs-sm);
   font-variant-numeric: tabular-nums;
@@ -1730,8 +1745,48 @@ button {
   flex-shrink: 0;
   padding-top: 2px;
   font-size: var(--fs-sm);
-  color: var(--accent);
+  /* 用 --accent-ink 而不是 --accent：后者当文字压在 --surface-2 上只有 4.03:1，
+     低于 AA 的 4.5。--accent-ink 就是为「主色当文字用」准备的（6.2:1）。 */
+  color: var(--accent-ink);
   font-weight: 600;
+}
+
+/*
+ * 计划页里的热身是折起来的。用原生 <details> —— 不引 state、不写 JS，
+ * 展开收起、键盘操作、无障碍全是浏览器给的。
+ *
+ * 折起来的理由：它原本占 161px，是计划页最大的单块，但没人在计划页上照着做热身 ——
+ * 那是在训练中做的。完整的清单放到了训练中界面（见 WorkoutPanel）。
+ */
+.warmup-fold {
+  display: block;
+  padding: 10px 12px;
+}
+
+.warmup-summary {
+  cursor: pointer;
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  color: var(--accent-ink);
+  list-style: none;
+}
+
+/* 默认那个三角各浏览器长得不一样，统一成自己的 */
+.warmup-summary::-webkit-details-marker {
+  display: none;
+}
+
+.warmup-summary::before {
+  content: '▸ ';
+}
+
+.warmup-fold[open] .warmup-summary {
+  display: block;
+  margin-bottom: 8px;
+}
+
+.warmup-fold[open] .warmup-summary::before {
+  content: '▾ ';
 }
 
 .warmup-list {
@@ -1826,8 +1881,8 @@ button {
   margin-top: 4px;
 }
 
+/* 没有历史记录时，这一条并到「名称 + 组次」那一行里 —— 见 ProgramPanel 的说明 */
 .plan-ex-last {
-  margin-top: 4px;
   font-size: var(--fs-sm);
   color: var(--text-4);
   font-variant-numeric: tabular-nums;
@@ -2109,7 +2164,7 @@ button {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  margin-left: auto;
+  margin-top: 6px;
   padding: 2px 8px;
   border-radius: var(--r-sm);
   background: rgba(245, 158, 11, 0.14);

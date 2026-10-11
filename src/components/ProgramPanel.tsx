@@ -15,6 +15,7 @@ import type { ContraindicationStore } from '../lib/useContraindications';
 import type { IndexedExercise, LoggedExercise, WorkoutDaySnapshot } from '../types';
 import { ProgramList } from './ProgramList';
 import { ProgramEditor } from './ProgramEditor';
+import { WarmupList } from './WarmupList';
 
 interface Props {
   dataset: Dataset;
@@ -145,28 +146,16 @@ export function ProgramPanel({
           {day.focus && <span className="hint">{day.focus}</span>}
         </div>
 
+        {/*
+          热身折起来。它原本占 161px，是这一页最大的单块 —— 但你不会在计划页上照着做热身，
+          你是在训练中照着做。所以真正的清单放到训练中界面（见 WorkoutPanel），
+          这里收成一行，想看细节点一下就行（`<details>` 原生行为，不用额外的 state）。
+        */}
         {day.warmup.length > 0 && (
-          <div className="warmup">
-            <span className="warmup-label">热身</span>
-            <ol className="warmup-list">
-              {day.warmup.map((w, i) => {
-                const ex = w.exerciseId ? dataset.byId.get(w.exerciseId) : undefined;
-                return (
-                  <li key={i}>
-                    {ex ? (
-                      <button className="warmup-name" onClick={() => onOpenExercise(ex)}>
-                        {w.name}
-                      </button>
-                    ) : (
-                      // 动作库里没有的热身（开合跳、绕环、空杆活动）—— 那是健美动作库，不是热身库
-                      <span className="warmup-name warmup-name-plain">{w.name}</span>
-                    )}
-                    <span className="warmup-note">{w.note}</span>
-                  </li>
-                );
-              })}
-            </ol>
-          </div>
+          <details className="warmup warmup-fold">
+            <summary className="warmup-summary">热身 · {day.warmup.length} 项</summary>
+            <WarmupList items={day.warmup} byId={dataset.byId} onOpenExercise={onOpenExercise} />
+          </details>
         )}
 
         {planned.length === 0 && <p className="hint">这个训练日还没有动作。点「编辑」加几个。</p>}
@@ -191,39 +180,52 @@ export function ProgramPanel({
                   <span className="plan-ex-scheme">
                     {p.sets} 组 × {repRangeText(p.repRange)}
                   </span>
-                  {blocked ? (
-                    <span className="plan-ex-contra">
-                      伤病禁忌
-                      {contra?.note ? ` · ${contra.note}` : ''}
-                      <button
-                        className="plan-ex-override"
-                        onClick={() => setOverrides((prev) => new Set(prev).add(p.exerciseId))}
-                        title="今天感觉可以，照常练"
-                      >
-                        仍要练
-                      </button>
-                    </span>
-                  ) : (
-                    <span className={`plan-ex-suggest suggest-${p.suggestion.kind}`}>
-                      {p.suggestion.text}
+
+                  {/*
+                    没有历史记录时，上次成绩就并到这一行里。
+                    有记录时不并 —— 那时候建议那行本来就带着成绩（「上次 60kg 做满 8 次 → …」），
+                    再写一遍是冗余。
+                  */}
+                  {!blocked && !last && (
+                    <span className="plan-ex-last">
+                      {elsewhere
+                        ? `本计划下还没练过 · 其他记录最近 ${elsewhere.date.slice(5)}：${fmtLast(elsewhere.sets)}`
+                        : '还没记录'}
                     </span>
                   )}
                 </div>
-                {!blocked && (
-                  <>
-                    <div className="plan-ex-last">
-                      {last
-                        ? `上次 ${last.date.slice(5)}：${fmtLast(last.sets)}`
-                        : elsewhere
-                          ? `本计划下还没练过（其他记录最近 ${elsewhere.date.slice(5)}：${fmtLast(elsewhere.sets)}）`
-                          : '还没有记录'}
+
+                {blocked ? (
+                  <div className="plan-ex-contra">
+                    伤病禁忌
+                    {contra?.note ? ` · ${contra.note}` : ''}
+                    <button
+                      className="plan-ex-override"
+                      onClick={() => setOverrides((prev) => new Set(prev).add(p.exerciseId))}
+                      title="今天感觉可以，照常练"
+                    >
+                      仍要练
+                    </button>
+                  </div>
+                ) : (
+                  /*
+                    **建议只在有历史记录时才单独占一行。**
+                    第一次练时它算出来的是「选个能做满 X 次的重量」—— 一句占位话，
+                    6 个动作里重复 6 遍只差数字，却装在胶囊里、是整行最抢眼的东西。
+                    实测这一行让每个动作占 93px，手机上 6 个动作就是 556px，
+                    是整块计划里最大的一坨（热身才 161px）。
+                  */
+                  last && (
+                    <div className={`plan-ex-suggest suggest-${p.suggestion.kind}`}>
+                      {p.suggestion.text}
                     </div>
-                    {p.exerciseId === rampFor && ramp.length > 0 && (
-                      <div className="ramp">
-                        递增组：{rampText(ramp)} kg —— 不记录，只为让重量和轨迹先走一遍
-                      </div>
-                    )}
-                  </>
+                  )
+                )}
+
+                {!blocked && p.exerciseId === rampFor && ramp.length > 0 && (
+                  <div className="ramp">
+                    递增组：{rampText(ramp)} kg —— 不记录，只为让重量和轨迹先走一遍
+                  </div>
                 )}
               </div>
             );

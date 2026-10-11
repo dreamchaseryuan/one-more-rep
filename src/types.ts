@@ -83,6 +83,15 @@ export interface WorkoutDaySnapshot {
   /** 捕获时的训练日下标，仅在按名字找不到时作为退路 */
   dayIndex: number;
   exercises: SnapshotExercise[];
+  /**
+   * 练前的热身。**可选** —— 2026-10-11 之前的记录没有这个字段，
+   * 读旧数据时是 undefined，那时候不显示热身那一段就行，不需要做数据迁移。
+   *
+   * 它进快照的理由和 exercises 一样：热身也是「这次打算练什么」的一部分。
+   * 而它被真正用到的时刻是**训练中**（站在健身房看着手机照着做），
+   * 所以训练中界面要显示它 —— 见 WorkoutPanel。
+   */
+  warmup?: WarmupItem[];
 }
 
 export interface Workout {
