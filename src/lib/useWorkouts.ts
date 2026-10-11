@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { localDate } from './date';
+import { newId } from './id';
 import type { LoggedExercise, SetEntry, Workout, WorkoutDaySnapshot } from '../types';
 
 const KEY = 'fitness:workouts';
@@ -66,7 +67,7 @@ export function useWorkouts() {
   const start = useCallback(() => {
     setWorkouts((prev) => {
       if (prev.some((w) => !w.finishedAt)) return prev; // 已有进行中的，不重复开
-      const w: Workout = { id: crypto.randomUUID(), date: today(), entries: [] };
+      const w: Workout = { id: newId(), date: today(), entries: [] };
       return [...prev, w];
     });
   }, []);
@@ -88,7 +89,7 @@ export function useWorkouts() {
         if (active.entries.some((e) => e.exerciseId === exerciseId)) return prev;
         return prev.map((w) => (w.finishedAt ? w : { ...w, entries: [...w.entries, entry] }));
       }
-      return [...prev, { id: crypto.randomUUID(), date: today(), entries: [entry] }];
+      return [...prev, { id: newId(), date: today(), entries: [entry] }];
     });
   }, []);
 
@@ -175,7 +176,7 @@ export function useWorkouts() {
           w.finishedAt ? w : { ...w, entries: [...merged.values()], ...(day ? { day } : {}) },
         );
       }
-      return [...prev, { id: crypto.randomUUID(), date: today(), entries, ...(day ? { day } : {}) }];
+      return [...prev, { id: newId(), date: today(), entries, ...(day ? { day } : {}) }];
     });
   }, []);
 
