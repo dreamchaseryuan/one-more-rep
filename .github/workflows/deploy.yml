@@ -3,6 +3,19 @@ name: Deploy to GitHub Pages
 on:
   push:
     branches: [main]
+    # 纯文档改动不触发部署。
+    #
+    # 一次部署要拉 130 MB 媒体再构建，改个错别字也跑一遍是纯浪费。
+    # 注意 paths-ignore 的语义是「**所有**改动文件都匹配才跳过」——
+    # 只改文档才跳过；只要碰了 src/、data/、scripts/、public/ 或这个 workflow 本身，照样部署。
+    #
+    # data/*.json 是构建输入（programs / warmups / name_zh），**故意不在这里**。
+    # 手动重跑不受影响，workflow_dispatch 是独立触发器，随时可以在 Actions 页面点。
+    paths-ignore:
+      - '**.md'
+      - '**/*.md'
+      - 'docs/**'
+      - '.gitignore'
   workflow_dispatch:
 
 permissions:
