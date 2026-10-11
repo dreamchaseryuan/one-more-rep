@@ -1226,8 +1226,29 @@ button {
   font-variant-numeric: tabular-nums;
 }
 
+/*
+ * 动作列表。这个面板有 1240px 宽，只放一列的话一行会横跨 1200px ——
+ * 名称在最左、建议在最右，中间一大片空，读一行眼睛要横跨整个屏幕。
+ * 宽屏时改两列：行宽砍半，相关信息就靠在一起了。
+ * 断点取 1080px 是按最长的一条「名称 + 组次 + 建议」估的，再窄就会挤到换行。
+ */
+.plan-ex-list {
+  display: grid;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 1080px) {
+  .plan-ex-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 32px;
+  }
+}
+
+/*
+ * 建议跟着「组次」走，**不要** margin-left: auto ——
+ * 那会把它推到行尾，在有 1200px 可推的时候就是把一行信息劈成两半。
+ */
 .plan-ex-suggest {
-  margin-left: auto;
   padding: 2px 8px;
   border-radius: var(--r-sm);
   font-size: var(--fs-sm);

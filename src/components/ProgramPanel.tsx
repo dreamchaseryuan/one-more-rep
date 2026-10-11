@@ -171,60 +171,64 @@ export function ProgramPanel({
 
         {planned.length === 0 && <p className="hint">这个训练日还没有动作。点「编辑」加几个。</p>}
 
-        {planned.map((p) => {
-          const last = store.lastPerformance(p.exerciseId, program.id);
-          const elsewhere = last ? null : store.lastPerformanceAnyScope(p.exerciseId);
-          const contra = contraStore.get(p.exerciseId);
-          const blocked = isBlocked(p.exerciseId);
-          return (
-            <div className={`plan-ex ${blocked ? 'plan-ex-blocked' : ''}`} key={p.exerciseId}>
-              <div className="plan-ex-main">
-                <button
-                  className="plan-ex-name"
-                  onClick={() => p.exercise && onOpenExercise(p.exercise)}
-                >
-                  {p.exercise?.nameZh ?? '(动作已不在库中)'}
-                </button>
-                <span className="plan-ex-scheme">
-                  {p.sets} 组 × {repRangeText(p.repRange)}
-                </span>
-                {blocked ? (
-                  <span className="plan-ex-contra">
-                    伤病禁忌
-                    {contra?.note ? ` · ${contra.note}` : ''}
-                    <button
-                      className="plan-ex-override"
-                      onClick={() => setOverrides((prev) => new Set(prev).add(p.exerciseId))}
-                      title="今天感觉可以，照常练"
-                    >
-                      仍要练
-                    </button>
+        {/* 两列：这个面板有 1240px 宽，只放一列的话一行会横跨 1200px，
+            名称在最左、建议在最右，中间一大片空。 */}
+        <div className="plan-ex-list">
+          {planned.map((p) => {
+            const last = store.lastPerformance(p.exerciseId, program.id);
+            const elsewhere = last ? null : store.lastPerformanceAnyScope(p.exerciseId);
+            const contra = contraStore.get(p.exerciseId);
+            const blocked = isBlocked(p.exerciseId);
+            return (
+              <div className={`plan-ex ${blocked ? 'plan-ex-blocked' : ''}`} key={p.exerciseId}>
+                <div className="plan-ex-main">
+                  <button
+                    className="plan-ex-name"
+                    onClick={() => p.exercise && onOpenExercise(p.exercise)}
+                  >
+                    {p.exercise?.nameZh ?? '(动作已不在库中)'}
+                  </button>
+                  <span className="plan-ex-scheme">
+                    {p.sets} 组 × {repRangeText(p.repRange)}
                   </span>
-                ) : (
-                  <span className={`plan-ex-suggest suggest-${p.suggestion.kind}`}>
-                    {p.suggestion.text}
-                  </span>
+                  {blocked ? (
+                    <span className="plan-ex-contra">
+                      伤病禁忌
+                      {contra?.note ? ` · ${contra.note}` : ''}
+                      <button
+                        className="plan-ex-override"
+                        onClick={() => setOverrides((prev) => new Set(prev).add(p.exerciseId))}
+                        title="今天感觉可以，照常练"
+                      >
+                        仍要练
+                      </button>
+                    </span>
+                  ) : (
+                    <span className={`plan-ex-suggest suggest-${p.suggestion.kind}`}>
+                      {p.suggestion.text}
+                    </span>
+                  )}
+                </div>
+                {!blocked && (
+                  <>
+                    <div className="plan-ex-last">
+                      {last
+                        ? `上次 ${last.date.slice(5)}：${fmtLast(last.sets)}`
+                        : elsewhere
+                          ? `本计划下还没练过（其他记录最近 ${elsewhere.date.slice(5)}：${fmtLast(elsewhere.sets)}）`
+                          : '还没有记录'}
+                    </div>
+                    {p.exerciseId === rampFor && ramp.length > 0 && (
+                      <div className="ramp">
+                        递增组：{rampText(ramp)} kg —— 不记录，只为让重量和轨迹先走一遍
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
-              {!blocked && (
-                <>
-                  <div className="plan-ex-last">
-                    {last
-                      ? `上次 ${last.date.slice(5)}：${fmtLast(last.sets)}`
-                      : elsewhere
-                        ? `本计划下还没练过（其他记录最近 ${elsewhere.date.slice(5)}：${fmtLast(elsewhere.sets)}）`
-                        : '还没有记录'}
-                  </div>
-                  {p.exerciseId === rampFor && ramp.length > 0 && (
-                    <div className="ramp">
-                      递增组：{rampText(ramp)} kg —— 不记录，只为让重量和轨迹先走一遍
-                    </div>
-                  )}
-                </>
-              )}
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
 
         {planned.length > 0 && usable.length === 0 && (
           <p className="plan-warn">
