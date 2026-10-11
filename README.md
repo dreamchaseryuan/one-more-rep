@@ -10,7 +10,7 @@
 <p align="center">
   <img src="docs/screenshots/library.png" width="250" alt="搜索动作：中文名、英文原名、目标肌与器械">
   <img src="docs/screenshots/detail.png" width="250" alt="动作详情：动画演示、属性与中文分步说明">
-  <img src="docs/screenshots/workout.png" width="250" alt="训练记录：组数重量、打勾与组间休息计时">
+  <img src="docs/screenshots/workout.png" width="250" alt="训练记录：热身清单、组数重量、打勾与组间休息计时">
 </p>
 
 解决的实际问题：
