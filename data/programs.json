@@ -273,6 +273,50 @@
       ]
     },
     {
+      "id": "push-pull-squat",
+      "name": "推拉蹲 · 复合为主",
+      "desc": "推 / 拉 / 蹲三个功能日。每天 4~5 个动作，几乎全是复合动作，练完约一小时。这种安排不从推拉腿里单列肩日——前束已经被卧推和上斜推覆盖。",
+      "cadence": "建议一周 3 或 6 天，按 推 → 拉 → 蹲 顺序轮转",
+      "days": [
+        {
+          "name": "推日",
+          "focus": "胸 + 三头 · 肩推可选，有余力再加",
+          "warmup": "push",
+          "exercises": [
+            { "exerciseId": "0025", "sets": 4, "repRange": [6, 8] },
+            { "exerciseId": "0314", "sets": 3, "repRange": [8, 12] },
+            { "exerciseId": "0129", "sets": 3, "repRange": [8, 12] },
+            { "exerciseId": "0061", "sets": 3, "repRange": [10, 12] },
+            { "exerciseId": "0334", "sets": 3, "repRange": [12, 15] }
+          ]
+        },
+        {
+          "name": "拉日",
+          "focus": "背 + 后束 + 二头",
+          "warmup": "pull",
+          "exercises": [
+            { "exerciseId": "0652", "sets": 4, "repRange": [6, 10] },
+            { "exerciseId": "0027", "sets": 4, "repRange": [6, 8] },
+            { "exerciseId": "3563", "sets": 3, "repRange": [10, 12] },
+            { "exerciseId": "0203", "sets": 3, "repRange": [12, 15] },
+            { "exerciseId": "0023", "sets": 3, "repRange": [8, 12] }
+          ]
+        },
+        {
+          "name": "蹲日",
+          "focus": "股四、腘绳、臀、小腿",
+          "warmup": "legs",
+          "exercises": [
+            { "exerciseId": "0043", "sets": 4, "repRange": [6, 8] },
+            { "exerciseId": "0085", "sets": 3, "repRange": [8, 10] },
+            { "exerciseId": "0099", "sets": 3, "repRange": [10, 12] },
+            { "exerciseId": "0586", "sets": 3, "repRange": [10, 15] },
+            { "exerciseId": "0594", "sets": 4, "repRange": [12, 20] }
+          ]
+        }
+      ]
+    },
+    {
       "id": "five-by-five",
       "name": "5x5 力量",
       "desc": "低次数大重量的基础力量计划，只有 3 个动作一天。每次加 2.5kg 往上推。",
