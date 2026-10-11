@@ -81,16 +81,44 @@
 html,
 body {
   margin: 0;
-  /* 两团很淡的蓝光。原先是一块死平的底色，整屏看下来没有纵深 ——
-     光晕让上半屏有一点「从右上照下来」的感觉，但强度压得很低，免得跟卡片抢注意力。 */
+  color: var(--text);
+  font-family: system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* 底色 + 两团很淡的蓝光。原先是一块死平的底色，整屏看下来没有纵深 ——
+   光晕让上半屏有一点「从右上照下来」的感觉，但强度压得很低，免得跟卡片抢注意力。
+
+   这段必须在 html 上、不能在 body 上。放 body 的话 body 自己的背景会**盖住**
+   body::before 里的背景插画：按 CSS 2.1 附录 E 的绘制顺序，负 z-index 的伪元素
+   画在「body 自己的背景」之前。这个坑很难查 —— 伪元素的尺寸、URL、opacity 全对，
+   DevTools 里选中也高亮，就是一辈子看不见。 */
+html {
   background:
     radial-gradient(1200px 680px at 76% -10%, rgba(59, 130, 246, 0.15), transparent 64%),
     radial-gradient(900px 600px at 6% 18%, rgba(56, 189, 248, 0.06), transparent 68%),
     var(--bg);
   background-attachment: fixed;
-  color: var(--text);
-  font-family: system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', sans-serif;
-  -webkit-font-smoothing: antialiased;
+}
+
+/* 背景插画。压到 0.09 —— 这是一张横向的 1024×712 插画，铺满就是「一张大图」，
+   会跟卡片抢注意力；压暗之后只剩中间那团暖光和周围的网纹，用来给底色加一层肌理。
+   想调强弱只改这一个数：0.05 几乎看不见，0.20 就开始读得出人形了。
+
+   用 position:fixed 的伪元素而不是 background-attachment:fixed ——
+   后者在 iOS Safari 上会退化成跟着滚，手机上会看到背景跟着列表滑走。 */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: url('./assets/bg.webp') center / cover no-repeat;
+  /* 0.12 是量出来的，不是挑出来的：把光晕和这张图逐像素叠起来算，
+     --dim(#8b929e) 压在最亮那一小块上还剩 3.4:1。注意这个数**不含图也只是 4.2:1** ——
+     右上角那团蓝晕本来就在 AA 线下，不是这张图造成的。真正的正文和次级文字都在
+     9:1 / 6.9:1，安全。 */
+  opacity: 0.12;
 }
 
 button {

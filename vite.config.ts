@@ -47,7 +47,10 @@ export default defineConfig({
         // media/images/ 和 media/videos/ 才是那 2648 个文件 130 MB，必须排除，
         // 否则预缓存会把安装直接拖死。排除规则因此要精确到子目录 ——
         // 写 `**/media/**` 会把上面那个 index.json 一起排除掉，等于白加。
-        globPatterns: ['**/*.{js,css,html}', 'data/*.json', 'media/*.json'],
+        // assets/*.webp 是背景插画（66 KB，被 CSS 引用所以会带哈希名）。
+        // 不写进来的话离线打开是没有背景的 —— CSS 照样加载，图 404，
+        // 应用看起来「只是少了一层肌理」，不会有报错，所以特别容易漏。
+        globPatterns: ['**/*.{js,css,html}', 'data/*.json', 'media/*.json', 'assets/*.webp'],
         globIgnores: ['**/media/images/**', '**/media/videos/**', '**/icons/**'],
         maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
         runtimeCaching: [
