@@ -7,6 +7,8 @@
     "dev": "vite",
     "build": "npm run check:programs && tsc --noEmit && vite build",
     "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "preview": "vite preview",
     "data:fetch-raw": "node scripts/fetch-raw.mjs data",
     "data:build": "node scripts/build-data.mjs data/exercises.json data/name_zh.json data/terms.zh.json public/data/exercises.json data/name-overrides.json",
@@ -26,6 +28,7 @@
     "@vitejs/plugin-react": "^6.1.2",
     "typescript": "^7.0.2",
     "vite": "^8.3.4",
-    "vite-plugin-pwa": "^2.0.0"
+    "vite-plugin-pwa": "^2.0.0",
+    "vitest": "^5.0.3"
   }
 }
