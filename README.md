@@ -23,17 +23,44 @@
 
 **只是想用**：直接打开 <https://yuan-20022.github.io/fitness-app/> 就行，下面这些都不用做。
 
-**想自己跑一份**：
+**想在本地跑一份**：
 
 ```bash
+git clone https://github.com/yuan-20022/fitness-app.git
+cd fitness-app
 npm install
-npm run data:fetch-raw  # 拉上游原始数据（17.4 MB，需代理见下）
-npm run data:build      # 清洗 + 裁剪 → public/data/exercises.json
-npm run media:fetch     # 下载 1324 张缩略图（8.5 MB）
 npm run dev             # http://localhost:5173
 ```
 
+**这就够了。** 动作数据（`public/data/exercises.json`，1 MB）已经在仓库里，媒体是可选依赖 ——
+没有图也能正常用，只是每个动作的位置显示「无图」。`npm test`（94 个用例，约 400ms）
+和 `npm run build` 也都不需要额外的步骤。
+
+这几步是在一个全新 clone 里实际跑过才写进来的 —— 早先这一节让人先跑 `data:fetch-raw`
+拉 17.4 MB，但那一步**根本不需要**：数据文件本来就入库了。
+
 手机访问：`npm run dev` 会打印 Network 地址，手机连同一 WiFi 打开即可。
+
+### 可选：把图也拉下来
+
+```bash
+npm run media:fetch          # 1324 张缩略图，8.5 MB
+npm run media:fetch-videos   # 再加 122 MB 的 GIF
+```
+
+**没拉之前 `npm run build` 会有一条警告**，说 `media/*.json` 匹配不到任何文件 ——
+那是因为 `media/index.json`（媒体清单）跟着媒体一起生成，不拉就没有。
+**构建照样成功**（exit 0），只是离线时没有图可以缓存。那不是坏了。
+
+### 可选：重建数据集
+
+`public/data/exercises.json` 已经入库，**一般不需要重建**。只有改了中文名映射
+（`data/name-overrides.json`）、或者上游数据集更新时才需要：
+
+```bash
+npm run data:fetch-raw  # 拉上游原始数据（17.4 MB，需代理见下）
+npm run data:build      # 清洗 + 裁剪 → public/data/exercises.json
+```
 
 ### 代理
 
@@ -60,7 +87,7 @@ HTTPS_PROXY=http://127.0.0.1:7897 npm run media:fetch
 | `npm run media:fetch` | 下载缩略图（8.5 MB） |
 | `npm run media:fetch-videos` | 下载动画 GIF（122 MB） |
 | `npm run icons` | 重新生成 PWA 图标（哑铃图形，手写 PNG 编码） |
-| `npm run check:programs` | 校验计划模板里的动作 ID 是否都存在（已挂进 `build`） |
+| `npm run check:programs` | 校验模板与有氧收尾里的动作 ID 是否都存在、是不是该有的类型（已挂进 `build`） |
 
 ## 目录
 
