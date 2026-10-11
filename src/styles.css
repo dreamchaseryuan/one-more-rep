@@ -791,19 +791,30 @@ button {
   font-weight: 600;
 }
 
+/*
+ * 「进行中的训练有几个动作」的角标。
+ *
+ * **绝对定位，不是行内的。** 角标是状态提示，不该撑宽它所在的按钮：行内排版会
+ * 把「训练记录」从 157px 撑到 178px，而顶栏在 390px 手机上只有 366px 可用 ——
+ * 一撑就把右边的收藏按钮挤到下一行（实测顶栏从 118px 变成 160px，收藏按钮孤零零
+ * 占一整行）。角标的值 0~30 都会变，让布局跟着它跳是不对的。
+ */
 .tab-badge {
-  display: inline-grid;
+  position: absolute;
+  /* 挂到按钮的角外面，不是压在字上 —— `.tabs` 自己有 4px 内边距，够它探出去 */
+  top: -4px;
+  right: -4px;
+  display: grid;
   place-items: center;
-  min-width: 17px;
-  height: 17px;
-  margin-left: 4px;
+  min-width: 16px;
+  height: 16px;
   padding: 0 4px;
-  border-radius: var(--r-md);
+  border-radius: var(--r-full);
   background: var(--accent);
   color: var(--on-accent);
   font-size: var(--fs-xs);
   font-weight: 700;
-  vertical-align: 1px;
+  line-height: 1;
 }
 
 /* ── 按钮 ─────────────────────────────────── */
@@ -853,6 +864,15 @@ button {
      这个值**不参与上面的间距尺度** —— 它编码的是那个浮动控件的高度，
      吸到 64px 会让计时器盖住最后一条记录。 */
   padding-bottom: 110px;
+}
+
+/*
+ * 点「开始训练」会 scrollIntoView 到这一块（见 App.tsx）。
+ * 顶栏是 sticky 的、67px 高，不补这一段的话「结束训练」会被压在它下面 ——
+ * 实测压掉 13px，按钮上沿被切掉一截。
+ */
+.today {
+  scroll-margin-top: 78px;
 }
 
 .today-head {
