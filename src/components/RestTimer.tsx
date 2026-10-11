@@ -1,23 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-
-/** 计时结束的提示音。用 WebAudio 现场合成，不引外部音频文件。 */
-function beep() {
-  try {
-    const ctx = new AudioContext();
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.type = 'sine';
-    osc.frequency.value = 880;
-    gain.gain.setValueAtTime(0.09, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.5);
-    osc.connect(gain).connect(ctx.destination);
-    osc.start();
-    osc.stop(ctx.currentTime + 0.5);
-    setTimeout(() => void ctx.close(), 800);
-  } catch {
-    // 浏览器不给播就不播，不值得为此报错
-  }
-}
+import { chime } from '../lib/alert';
 
 const DURATIONS = [60, 90, 120, 180];
 
@@ -52,7 +34,7 @@ export function RestTimer({ runId, duration, onDurationChange, onDismiss }: Prop
   useEffect(() => {
     if (left === 0 && !beeped.current) {
       beeped.current = true;
-      beep();
+      chime();
     }
   }, [left]);
 
