@@ -128,9 +128,54 @@ button {
   justify-content: space-between;
 }
 
-.filters-active {
+/* 整块筛选面板的开合按钮。手机上默认收起 —— 理由见 FilterBar.tsx */
+.filters-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  /* 全局的 button 规则只重置了 font / color / cursor，没重置背景和边框 ——
+     想做成扁平样式的按钮都得自己写这两行，否则会在深色底上露出一块浏览器默认的白底。 */
+  padding: 7px 0;
+  background: none;
+  border: 0;
   font-size: 13px;
-  color: var(--accent);
+  color: var(--text);
+  /* 横向占满整行剩余位置、纵向给足内边距：文字本身只有约 17px 高，
+     而那是个手指点不准的目标 —— 在健身房里手上有汗时更点不准。
+     背景是透明的，所以看着还是一样的。 */
+  flex: 1;
+}
+
+.filters-caret {
+  font-size: 11px;
+  color: var(--dim);
+}
+
+/*
+ * 有几个条件正在生效。收起时必须看得见 ——
+ * 否则条件还在生效、结果却莫名变少，使用者看不出是为什么。
+ */
+.filters-badge {
+  min-width: 18px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: #0d0f12;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 16px;
+  text-align: center;
+}
+
+/* 收起时把生效中的条件摆出来，点一下直接摘掉，不用先展开面板 */
+.filters-applied {
+  padding-top: 2px;
+}
+
+.chip-x {
+  font-size: 13px;
+  line-height: 1;
+  opacity: 0.6;
 }
 
 .filter-group {
