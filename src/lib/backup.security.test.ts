@@ -1,6 +1,4 @@
 import { describe, expect, it } from 'vitest';
-import { readFileSync, readdirSync } from 'node:fs';
-import { join } from 'node:path';
 import { parseBackup } from './backup';
 
 /**
@@ -108,21 +106,22 @@ describe('安全不变式 · 源码里不存在 HTML 注入 / 动态执行 sink'
     'new Function',
   ];
 
-  const walk = (dir: string): string[] =>
-    readdirSync(dir, { withFileTypes: true }).flatMap((e) => {
-      const p = join(dir, e.name);
-      if (e.isDirectory()) return walk(p);
-      // 只扫会被打进产物的源码，跳过测试文件自身
-      return e.name.endsWith('.ts') || e.name.endsWith('.tsx') ? [p] : [];
-    });
+  // 用 Vite 的 raw glob 读源码，**不用 node:fs** —— 本项目 tsconfig 只带 `vite/client`
+  // 类型、没装 @types/node，一旦用 node 内建，`tsc --noEmit`（CI 的 npm run build）会直接在
+  // 这里报错。glob 由 Vite/vitest 处理，类型也来自 vite/client，零新依赖。
+  const sources = import.meta.glob<string>('../**/*.{ts,tsx}', {
+    query: '?raw',
+    import: 'default',
+    eager: true,
+  });
 
   it('src 下没有禁用 sink', () => {
-    const files = walk(join(process.cwd(), 'src')).filter((f) => !f.endsWith('.test.ts'));
     const hits: string[] = [];
-    for (const f of files) {
-      const text = readFileSync(f, 'utf8');
+    for (const [path, text] of Object.entries(sources)) {
+      // 跳过测试文件自身（它本来就要包含这些串做断言）
+      if (path.includes('.test.')) continue;
       for (const bad of FORBIDDEN) {
-        if (text.includes(bad)) hits.push(`${f}: ${bad}`);
+        if (text.includes(bad)) hits.push(`${path}: ${bad}`);
       }
     }
     expect(hits).toEqual([]);
